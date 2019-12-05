@@ -9,6 +9,8 @@ Parses SIXray data.
 import os
 import xml.etree.ElementTree as ET
 
+import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -23,7 +25,7 @@ CLASS_INDEXES = {
 
 
 # DATA PARSING
-def parse_localization_data(path_to_sixray):
+def parse_annotations(path_to_sixray):
     """Parses SIXray annotations.
 
     :param path_to_sixray: path to SIXray. Assumes annotations stored in Annotations directory
@@ -64,5 +66,34 @@ def parse_localization_data(path_to_sixray):
     return annotations
 
 
+# DATA VISUALIZATION
+def show_bounding_boxes(path_to_sixray, img_dir):
+    """Shows bounding boxes on SIXray annotated data.
+
+    :param path_to_sixray: path to SIXray dataset
+    :param img_dir: name of directory of images through which to iterate + display
+    """
+
+    def draw_box(img, x1, y1, x2, y2, color=(255, 0, 0)):
+        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness=2)
+
+    annotations = parse_annotations(path_to_sixray)
+
+    for img_name in os.listdir(os.path.join(path_to_sixray, img_dir)):
+        img = cv2.imread(os.path.join(path_to_sixray, img_dir, img_name))
+        for obj in annotations[img_name.lower()]:
+            draw_box(img, *annotations[img_name.lower()][obj])
+
+        plt.gcf().canvas.set_window_title("SIXray visualization")
+
+        plt.imshow(img)
+        plt.axis("off")
+
+        plt.show()
+
+        if input("'q' to quit:") == "q":
+            break
+
+
 if __name__ == "__main__":
-    print(parse_localization_data("/media/ryan/Data/x-ray-datasets/SIXray"))
+    show_bounding_boxes("/media/ryan/Data/x-ray-datasets/SIXray", "20")
