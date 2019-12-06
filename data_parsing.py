@@ -6,17 +6,17 @@ Parses SIXray data.
 
 Data must be in the below structure:
 
-SIXray
---> annotations
---> images
-------> P0000.JPG
-------> ...
---> labels
-------> 10
-----------> train.csv
-----------> test.csv
-------> 100
-------> 1000
+./
+├── annotations
+├───── P00001.xml
+├── images
+├───── P00001.jpg
+├── labels
+├───── 10
+├─────── train.csv
+├─────── test.csv
+├───── 100
+└───── 1000
 
 """
 
@@ -114,7 +114,7 @@ def retrieve_annotations(filename):
             for box in split[1:]:
                 box = box.split(",")
                 label = box[-1]
-                annotations[path][label] = np.array([int(float(coord)) for coord in box[:-1]])
+                annotations[path][label] = np.array([round(float(coord)) for coord in box[:-1]])
 
     return annotations
 
@@ -191,18 +191,18 @@ def copy(src, dest):
             shutil.copyfile(file, os.path.join(dest, file))
 
 
-def resize_imgs(img_dir, annotations, target_shape=(224, 224), annotation_file="annotations.csv"):
+def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="annotations.csv"):
     """Resizes all images in target directory, along with their bounding boxes
 
     :param img_dir: target directory
     :param annotations: dict of annotations (bounding boxes)
-    :param target_shape: new shape of images-- doesn't include channels (default: (224, 244))
+    :param target_shape: new shape of images-- doesn't include channels (default: (416, 416))
     :param annotation_file: name of annotation file to write to (default: "annotations.csv")
     """
 
     for img_path in os.listdir(img_dir):
         if img_path.endswith(".jpg") or img_path.endswith(".png"):
-            img = cv2.imread(img_path)
+            img = cv2.imread(os.path.join(img_dir, img_path))
 
             x_scale = target_shape[0] / img.shape[1]
             y_scale = target_shape[0] / img.shape[0]
@@ -217,13 +217,13 @@ def resize_imgs(img_dir, annotations, target_shape=(224, 224), annotation_file="
 
                 annotations[img_path][obj] = np.array([x_min, y_min, x_max, y_max])
 
-            cv2.imwrite(img_path, cv2.resize(img, (target, target)))
+            cv2.imwrite(os.path.join(img_dir, img_path), cv2.resize(img, target_shape))
 
-    write_annotations(annotations, annotation_file)
+    write_annotations(annotations, os.path.join(img_dir, annotation_file))
 
 
 # ---------------- DATA VISUALIZATION ----------------
-def show_bounding_boxes(img_dir, annotations):
+def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
     """Shows bounding boxes on annotated data.
 
     :param img_dir: name of directory of images through which to iterate + display
@@ -236,13 +236,7 @@ def show_bounding_boxes(img_dir, annotations):
 
         for obj in annotations[img_name]:
             x_min, y_min, x_max, y_max = annotations[img_name][obj]
-            cv2.rectangle(
-                img,
-                (x_min, y_min),
-                (x_max, y_max),
-                color=(255, 0, 0),
-                thickness=2
-            )
+            cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
 
         plt.gcf().canvas.set_window_title("SIXray visualization")
 
@@ -262,4 +256,13 @@ if __name__ == "__main__":
     show_bounding_boxes(
         "/home/ryan/scratchpad/sixray/sixray",
         retrieve_annotations("/home/ryan/scratchpad/sixray/sixray/annotations.csv")
+        # os.path.join(sixray["power"], "images/20"),
+        # parse_annotations(sixray["power"])
     )
+
+    # formatting for YOLO training
+    # copy(os.path.join(sixray["power"], "images/20"), "/home/ryan/scratchpad/sixray/sixray")
+    # resize_imgs(
+    #     "/home/ryan/scratchpad/sixray/sixray",
+    #     retrieve_annotations(os.path.join(sixray["power"], "annotations.csv"))
+    # )
