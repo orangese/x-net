@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# CONSTANTS
 CLASS_INDEXES = {
     "gun": 0,
     "knife": 1,
@@ -24,12 +23,13 @@ CLASS_INDEXES = {
 }
 
 
-# DATA PARSING
+# ---------------- DATA PARSING ----------------
+
+# ANNOTATIONS
 def parse_annotations(path_to_sixray):
     """Parses SIXray annotations.
 
     :param path_to_sixray: path to SIXray. Assumes annotations stored in "annotations" directory
-
     :return: dict with image paths mapped to a dict of one-hot encodings mapped to bounding boxes
     """
 
@@ -81,6 +81,7 @@ def write_annotations(annotations, filename):
     print("Wrote annotations to {}".format(filename))
 
 
+# LABELS
 def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
     os.chdir(os.path.join(path_to_sixray, "labels", str(sixray_set)))
     parse_index = lambda index: int(index) if int(index) == 1 else 0
@@ -92,7 +93,7 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
             try:
                 split = line.rstrip().split(",")
 
-                img_path = split[0]
+                img_path = split[0] + ".jpg"
                 img_label = [parse_index(index) for index in split[1:]]
 
                 labels[img_path] = img_label
@@ -107,7 +108,24 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
     return labels
 
 
-# DATA VISUALIZATION
+# ---------------- DATA CONFIGURATION ----------------
+def find_img(img_path, path_to_sixray):
+    os.chdir(os.path.join(path_to_sixray, "images", img_path))
+    for img_dir in os.listdir(os.getcwd()):
+        if img_path in os.listdir(os.path.join(os.getcwd(), img_dir)):
+            return os.listdir(os.path.join(os.getcwd(), img_dir, img_path))
+    return -1
+
+
+def reorganize_data(path_to_sixray, *args, **kwargs):
+    labels = parse_labels(path_to_sixray, *args, **kwargs)
+
+    for img in labels:
+        full_img_path = find_img(img, path_to_sixray)
+        print(full_img_path)
+
+
+# ---------------- DATA VISUALIZATION ----------------
 def show_bounding_boxes(path_to_sixray, img_dir):
     """Shows bounding boxes on SIXray annotated data.
 
@@ -143,16 +161,14 @@ def show_bounding_boxes(path_to_sixray, img_dir):
 
 
 if __name__ == "__main__":
-    sixray_paths = {
+    sixray = {
         "power": "/media/ryan/Data/x-ray-datasets/SIXray",
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
 
-    # parse_labels(sixray_paths["air"], sixray_set=10)
-
-
-    show_bounding_boxes(sixray_paths["air"], "images/20")
+    # parse_labels(sixray["power"], sixray_set=10)
+    # show_bounding_boxes(sixray["power"], "images/20")
     # write_annotations(
-        # parse_annotations(sixray_paths["air"]),
-        # "/Users/ryan/Documents/Coding/Datasets/SIXray/annotations/annotations.csv"
+        # parse_annotations(sixray["power"]),
+        # os.path.join(sixray["power"], "annotations.csv")
     # )
