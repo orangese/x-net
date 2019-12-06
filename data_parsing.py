@@ -177,20 +177,49 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
 
 
 # ---------------- DATA CONFIGURATION ----------------
-def find_img(img_path, path_to_sixray):
-    os.chdir(os.path.join(path_to_sixray, "images", img_path))
-    for img_dir in os.listdir(os.getcwd()):
-        if img_path in os.listdir(os.path.join(os.getcwd(), img_dir)):
-            return os.listdir(os.path.join(os.getcwd(), img_dir, img_path))
-    return -1
+@restore_cwd
+def copy(src, dest):
+    """Copies png or jpg images from src to dest
+
+    :param src: source directory
+    :param dest: destination directory
+    """
+
+    os.chdir(src)
+    for file in os.listdir(os.getcwd()):
+        if file.endswith(".jpg") or file.endswith(".png"):
+            shutil.copyfile(file, os.path.join(dest, file))
 
 
-def reorganize_data(path_to_sixray, *args, **kwargs):
-    labels = parse_labels(path_to_sixray, *args, **kwargs)
+def resize_imgs(img_dir, annotations, target_shape=(224, 224), annotation_file="annotations.csv"):
+    """Resizes all images in target directory, along with their bounding boxes
 
-    for img in labels:
-        full_img_path = find_img(img, path_to_sixray)
-        print(full_img_path)
+    :param img_dir: target directory
+    :param annotations: dict of annotations (bounding boxes)
+    :param target_shape: new shape of images-- doesn't include channels (default: (224, 244))
+    :param annotation_file: name of annotation file to write to (default: "annotations.csv")
+    """
+
+    for img_path in os.listdir(img_dir):
+        if img_path.endswith(".jpg") or img_path.endswith(".png"):
+            img = cv2.imread(img_path)
+
+            x_scale = target_shape[0] / img.shape[1]
+            y_scale = target_shape[0] / img.shape[0]
+
+            for obj in annotations[img_path]:
+                x_min, y_min, x_max, y_max = annotations[img_path][obj]
+
+                x_min = round(x_min * x_scale)
+                y_min = round(y_min * y_scale)
+                x_max = round(x_max * x_scale)
+                y_max = round(y_max * y_scale)
+
+                annotations[img_path][obj] = np.array([x_min, y_min, x_max, y_max])
+
+            cv2.imwrite(img_path, cv2.resize(img, (target, target)))
+
+    write_annotations(annotations, annotation_file)
 
 
 # ---------------- DATA VISUALIZATION ----------------
