@@ -4,16 +4,35 @@
 
 Parses SIXray data.
 
+Data must be in the below structure:
+
+SIXray
+--> annotations
+--> images
+------> P0000.JPG
+------> ...
+--> labels
+------> 10
+----------> train.csv
+----------> test.csv
+------> 100
+------> 1000
+
 """
 
 import os
-import xml.etree.ElementTree as ET
+import functools
+import shutil
+from xml.etree import ElementTree as ET
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
 
+# ---------------- HELPERS AND SETUP ----------------
+
+# CONSTANTS
 CLASS_INDEXES = {
     "gun": 0,
     "knife": 1,
@@ -126,17 +145,15 @@ def reorganize_data(path_to_sixray, *args, **kwargs):
 
 
 # ---------------- DATA VISUALIZATION ----------------
-def show_bounding_boxes(path_to_sixray, img_dir):
-    """Shows bounding boxes on SIXray annotated data.
+def show_bounding_boxes(img_dir, annotations):
+    """Shows bounding boxes on annotated data.
 
-    :param path_to_sixray: path to SIXray dataset
     :param img_dir: name of directory of images through which to iterate + display
+    :param annotations: annotation set
     """
 
-    annotations = parse_annotations(path_to_sixray)
-
-    for img_name in os.listdir(os.path.join(path_to_sixray, img_dir)):
-        img = cv2.imread(os.path.join(path_to_sixray, img_dir, img_name))
+    for img_name in os.listdir(img_dir):
+        img = cv2.imread(os.path.join(img_dir, img_name))
         img_name = img_name.upper().replace("JPG", "jpg")
 
         for obj in annotations[img_name]:
@@ -146,7 +163,7 @@ def show_bounding_boxes(path_to_sixray, img_dir):
                 (x_min, y_min),
                 (x_max, y_max),
                 color=(255, 0, 0),
-                thickness=3
+                thickness=2
             )
 
         plt.gcf().canvas.set_window_title("SIXray visualization")
@@ -156,19 +173,15 @@ def show_bounding_boxes(path_to_sixray, img_dir):
 
         plt.show()
 
-        if input("'q' to quit:") == "q":
-            break
 
-
+# ---------------- TESTING ----------------
 if __name__ == "__main__":
     sixray = {
         "power": "/media/ryan/Data/x-ray-datasets/SIXray",
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
 
-    # parse_labels(sixray["power"], sixray_set=10)
-    # show_bounding_boxes(sixray["power"], "images/20")
-    # write_annotations(
-        # parse_annotations(sixray["power"]),
-        # os.path.join(sixray["power"], "annotations.csv")
-    # )
+    show_bounding_boxes(
+        "/home/ryan/scratchpad/sixray/sixray",
+        retrieve_annotations("/home/ryan/scratchpad/sixray/sixray/annotations.csv")
+    )
