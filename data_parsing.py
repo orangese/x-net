@@ -42,9 +42,22 @@ CLASS_INDEXES = {
 }
 
 
+# DECORATORS
+def restore_cwd(func):
+    @functools.wraps(func)
+    def _func(*args, **kwargs):
+        cwd = os.getcwd()
+        result = func(*args, **kwargs)
+        os.chdir(cwd)
+        return result
+
+    return _func
+
+
 # ---------------- DATA PARSING ----------------
 
 # ANNOTATIONS
+@restore_cwd
 def parse_annotations(path_to_sixray):
     """Parses SIXray annotations.
 
@@ -101,7 +114,15 @@ def write_annotations(annotations, filename):
 
 
 # LABELS
+@restore_cwd
 def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
+    """Parses labels.
+
+    :param path_to_sixray: path to SIXray dataset
+    :param sixray_set: SIXray set (default is 10)
+    :param label_type: either "train" or "test" (default is "train")
+    """
+
     os.chdir(os.path.join(path_to_sixray, "labels", str(sixray_set)))
     parse_index = lambda index: int(index) if int(index) == 1 else 0
 
