@@ -97,7 +97,35 @@ def parse_annotations(path_to_sixray):
     return annotations
 
 
+def retrieve_annotations(filename):
+    """Retrieves parsed annotations from filename
+
+    :param filename: filename at which annotations reside
+    :return: annotation dict
+    """
+
+    annotations = {}
+    with open(filename, "r") as file:
+        for line in file:
+            split = line.rstrip().split(" ")
+            path = split[0]
+            annotations[path] = {}
+
+            for box in split[1:]:
+                box = box.split(",")
+                label = box[-1]
+                annotations[path][label] = np.array([int(float(coord)) for coord in box[:-1]])
+
+    return annotations
+
+
 def write_annotations(annotations, filename):
+    """Writes annotations to filename.
+
+    :param annotations: annotations to write to file (generated using parse_annotations)
+    :param filename: filename to write annotations to
+    """
+
     with open(filename, "w") as file:
         for img in annotations:
             line = img + " "
@@ -133,7 +161,7 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
             try:
                 split = line.rstrip().split(",")
 
-                img_path = split[0] + ".jpg"
+                img_path = find_img(split[0])
                 img_label = [parse_index(index) for index in split[1:]]
 
                 labels[img_path] = img_label
