@@ -28,15 +28,15 @@ CLASS_INDEXES = {
 def parse_annotations(path_to_sixray):
     """Parses SIXray annotations.
 
-    :param path_to_sixray: path to SIXray. Assumes annotations stored in Annotations directory
+    :param path_to_sixray: path to SIXray. Assumes annotations stored in "annotations" directory
 
     :return: dict with image paths mapped to a dict of one-hot encodings mapped to bounding boxes
     """
 
-    os.chdir(os.path.join(path_to_sixray, "Annotation"))
+    os.chdir(os.path.join(path_to_sixray, "annotations"))
 
     parse_text = lambda element_list: element_list[0].text.lower()
-    parse_bounding_box = lambda element: np.array([float(coord.text) for coord in element])
+    parse_bounding_box = lambda element: np.array([round(float(coord.text)) for coord in element])
 
     annotations = {}
     num_files = 0
@@ -44,7 +44,7 @@ def parse_annotations(path_to_sixray):
 
     for annotation_file in os.listdir(os.getcwd()):
         root = ET.parse(os.path.join(os.getcwd(), annotation_file))
-        filename = parse_text(root.findall("./filename"))
+        filename = parse_text(root.findall("./filename")).upper().replace("JPG", "jpg")
 
         annotations[filename] = {}
 
@@ -62,8 +62,49 @@ def parse_annotations(path_to_sixray):
         num_files += 1
 
     print("Parsed {} images and {} objects".format(num_files, num_objs))
-
     return annotations
+
+
+def write_annotations(annotations, filename):
+    with open(filename, "w") as file:
+        for img in annotations:
+            line = img + " "
+
+            for obj in annotations[img]:
+                bounding_box = annotations[img][obj]
+                for coord in bounding_box:
+                    line += str(coord) + ","
+                line += str(obj) + " "
+
+            file.write(line + "\n")
+
+    print("Wrote annotations to {}".format(filename))
+
+
+def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
+    os.chdir(os.path.join(path_to_sixray, "labels", str(sixray_set)))
+    parse_index = lambda index: int(index) if int(index) == 1 else 0
+
+    labels = {}
+    num_parsed, num_objects = 0, 0
+    with open(label_type + ".csv") as label_file:
+        for line in label_file:
+            try:
+                split = line.rstrip().split(",")
+
+                img_path = split[0]
+                img_label = [parse_index(index) for index in split[1:]]
+
+                labels[img_path] = img_label
+
+                if 1 in img_label:
+                    num_objects += 1
+                num_parsed += 1
+            except ValueError:
+                pass
+
+    print("Parsed {} labels, {} total objects".format(num_parsed, num_objects))
+    return labels
 
 
 # DATA VISUALIZATION
@@ -74,19 +115,25 @@ def show_bounding_boxes(path_to_sixray, img_dir):
     :param img_dir: name of directory of images through which to iterate + display
     """
 
-    def draw_box(img, x1, y1, x2, y2, color=(255, 0, 0)):
-        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness=2)
-
     annotations = parse_annotations(path_to_sixray)
 
     for img_name in os.listdir(os.path.join(path_to_sixray, img_dir)):
         img = cv2.imread(os.path.join(path_to_sixray, img_dir, img_name))
-        for obj in annotations[img_name.lower()]:
-            draw_box(img, *annotations[img_name.lower()][obj])
+        img_name = img_name.upper().replace("JPG", "jpg")
+
+        for obj in annotations[img_name]:
+            x_min, y_min, x_max, y_max = annotations[img_name][obj]
+            cv2.rectangle(
+                img,
+                (x_min, y_min),
+                (x_max, y_max),
+                color=(255, 0, 0),
+                thickness=3
+            )
 
         plt.gcf().canvas.set_window_title("SIXray visualization")
 
-        plt.imshow(img)
+        plt.imshow(img, cmap="gray")
         plt.axis("off")
 
         plt.show()
@@ -96,4 +143,16 @@ def show_bounding_boxes(path_to_sixray, img_dir):
 
 
 if __name__ == "__main__":
-    show_bounding_boxes("/media/ryan/Data/x-ray-datasets/SIXray", "20")
+    sixray_paths = {
+        "power": "/media/ryan/Data/x-ray-datasets/SIXray",
+        "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
+    }
+
+    # parse_labels(sixray_paths["air"], sixray_set=10)
+
+
+    show_bounding_boxes(sixray_paths["air"], "images/20")
+    # write_annotations(
+        # parse_annotations(sixray_paths["air"]),
+        # "/Users/ryan/Documents/Coding/Datasets/SIXray/annotations/annotations.csv"
+    # )
