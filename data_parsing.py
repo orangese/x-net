@@ -306,22 +306,26 @@ def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
+    def yolo_benchmark_format(src, dest, src_annotations):
+        # formatting for benchmark YOLO training
+        copy(src, dest)
+        resize_imgs(dest, retrieve_annotations(src_annotations))
+
     sixray = {
         "power": "/media/ryan/Data/x-ray-datasets/SIXray",
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
+    annotated_imgs = os.getenv("HOME") + "/scratchpad/sixray/sixray"
 
-    def yolo_benchmark_format():
-        # formatting for benchmark YOLO training
-        copy(os.path.join(sixray["power"], "images/20"), "/home/ryan/scratchpad/sixray/sixray")
-        resize_imgs(
-            "/home/ryan/scratchpad/sixray/sixray",
-            retrieve_annotations(os.path.join(sixray["power"], "annotations.csv"))
-        )
+    # yolo_benchmark_format(
+    #     sixray["air"] + "/images/20", annotated_imgs,
+    #     annotated_imgs
+    #     sixray["air"] + "/annotations.csv"
+    # )
 
     show_bounding_boxes(
-        "/home/ryan/scratchpad/sixray/sixray",
-        retrieve_annotations("/home/ryan/scratchpad/sixray/sixray/annotations.csv")
-        # os.path.join(sixray["power"], "images/20"),
-        # retrieve_annotations(os.path.join(sixray["power"], "annotations.csv"))
+        annotated_imgs,
+        retrieve_annotations(annotated_imgs + "/annotations.csv")
+        # sixray["air"] + "/images/20",
+        # retrieve_annotations(sixray["air"] + "/annotations.csv")
     )
