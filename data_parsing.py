@@ -28,6 +28,7 @@ from xml.etree import ElementTree as ET
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+import tqdm
 
 
 # ---------------- HELPERS AND SETUP ----------------
@@ -86,7 +87,11 @@ def parse_annotations(path_to_sixray):
                 class_vector = CLASS_INDEXES[parse_text(obj.findall("name"))]
                 bounding_box = parse_bounding_box(obj.find("bndbox"))
 
-                annotations[filename][class_vector] = bounding_box
+                if class_vector in annotations[filename]:
+                    annotations[filename][class_vector].append(bounding_box)
+                else:
+                    annotations[filename][class_vector] = [bounding_box]
+
                 num_objs += len(annotations[filename])
             except IndexError:
                 print("Ignoring empty <object></object> tag at {}".format(annotation_file))
@@ -114,7 +119,12 @@ def retrieve_annotations(filename):
             for box in split[1:]:
                 box = box.split(",")
                 label = box[-1]
-                annotations[path][label] = np.array([round(float(coord)) for coord in box[:-1]])
+
+                bounding_box = np.array([round(float(coord)) for coord in box[:-1]])
+                if label in annotations[path]:
+                    annotations[path][label].append(bounding_box)
+                else:
+                    annotations[path][label] = [bounding_box]
 
     return annotations
 
@@ -131,10 +141,10 @@ def write_annotations(annotations, filename):
             line = img + " "
 
             for obj in annotations[img]:
-                bounding_box = annotations[img][obj]
-                for coord in bounding_box:
-                    line += str(int(coord)) + ","
-                line += str(obj) + " "
+                for bounding_box in annotations[img][obj]:
+                    for coord in bounding_box:
+                        line += str(int(coord)) + ","
+                    line += str(obj) + " "
 
             file.write(line + "\n")
 
@@ -186,9 +196,13 @@ def copy(src, dest):
     """
 
     os.chdir(src)
-    for file in os.listdir(os.getcwd()):
-        if file.endswith(".jpg") or file.endswith(".png"):
-            shutil.copyfile(file, os.path.join(dest, file))
+    print("Copying images from {} to {}".format(src, dest))
+
+    with tqdm.trange(len(os.listdir(os.getcwd()))) as pbar:
+        for file in os.listdir(os.getcwd()):
+            if file.endswith(".jpg") or file.endswith(".png"):
+                shutil.copyfile(file, os.path.join(dest, file))
+                pbar.update()
 
 
 def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="annotations.csv"):
@@ -200,29 +214,70 @@ def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="
     :param annotation_file: name of annotation file to write to (default: "annotations.csv")
     """
 
-    for img_path in os.listdir(img_dir):
-        if img_path.endswith(".jpg") or img_path.endswith(".png"):
-            img = cv2.imread(os.path.join(img_dir, img_path))
+    print("Resizing images in {} to {}".format(img_dir, target_shape))
 
-            x_scale = target_shape[0] / img.shape[1]
-            y_scale = target_shape[0] / img.shape[0]
+    with tqdm.trange(len(os.listdir(img_dir))) as pbar:
+        for img_path in os.listdir(img_dir):
+            if img_path.endswith(".jpg") or img_path.endswith(".png"):
+                img = cv2.imread(os.path.join(img_dir, img_path))
 
-            for obj in annotations[img_path]:
-                x_min, y_min, x_max, y_max = annotations[img_path][obj]
+                x_scale = target_shape[0] / img.shape[1]
+                y_scale = target_shape[0] / img.shape[0]
 
-                x_min = round(x_min * x_scale)
-                y_min = round(y_min * y_scale)
-                x_max = round(x_max * x_scale)
-                y_max = round(y_max * y_scale)
+                for obj in annotations[img_path]:
+                    bounding_boxes = []
 
-                annotations[img_path][obj] = np.array([x_min, y_min, x_max, y_max])
+                    for bounding_box in annotations[img_path][obj]:
+                        x_min, y_min, x_max, y_max = bounding_box
 
-            cv2.imwrite(os.path.join(img_dir, img_path), cv2.resize(img, target_shape))
+                        x_min = round(x_min * x_scale)
+                        y_min = round(y_min * y_scale)
+                        x_max = round(x_max * x_scale)
+                        y_max = round(y_max * y_scale)
+
+                        bounding_boxes.append(np.array([x_min, y_min, x_max, y_max]))
+
+                    annotations[img_path][obj] = bounding_boxes
+
+                cv2.imwrite(os.path.join(img_dir, img_path), cv2.resize(img, target_shape))
+
+            pbar.update()
 
     write_annotations(annotations, os.path.join(img_dir, annotation_file))
 
 
 # ---------------- DATA VISUALIZATION ----------------
+def apply_brightness_contrast(img, brightness=0, contrast=0):
+    """Applies brightness and contrast (written by @bfris on Stack Overflow)
+
+    :param img: input image
+    :param brightness: brightness value (default: 0)
+    :param contrast: contrast value (default: 0)
+    """
+    if brightness != 0:
+        if brightness > 0:
+            shadow = brightness
+            highlight = 255
+        else:
+            shadow = 0
+            highlight = 255 + brightness
+        alpha_b = (highlight - shadow) / 255.
+        gamma_b = shadow
+
+        overlay = cv2.addWeighted(img, alpha_b, input_img, 0, gamma_b)
+    else:
+        overlay = img.copy()
+
+    if contrast != 0:
+        f = 131. * (contrast + 127.) / (127. * (131 - contrast))
+        alpha_c = f
+        gamma_c = 127. * (1. - f)
+
+        overlay = cv2.addWeighted(overlay, alpha_c, overlay, 0, gamma_c)
+
+    return overlay
+
+
 def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
     """Shows bounding boxes on annotated data.
 
@@ -235,8 +290,11 @@ def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
         img_name = img_name.upper().replace("JPG", "jpg")
 
         for obj in annotations[img_name]:
-            x_min, y_min, x_max, y_max = annotations[img_name][obj]
-            cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
+            for bounding_box in annotations[img_name][obj]:
+                x_min, y_min, x_max, y_max = bounding_box
+                cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
+
+        img = apply_brightness_contrast(img, contrast=32)
 
         plt.gcf().canvas.set_window_title("SIXray visualization")
 
@@ -253,16 +311,17 @@ if __name__ == "__main__":
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
 
+    def yolo_benchmark_format():
+        # formatting for benchmark YOLO training
+        copy(os.path.join(sixray["power"], "images/20"), "/home/ryan/scratchpad/sixray/sixray")
+        resize_imgs(
+            "/home/ryan/scratchpad/sixray/sixray",
+            retrieve_annotations(os.path.join(sixray["power"], "annotations.csv"))
+        )
+
     show_bounding_boxes(
         "/home/ryan/scratchpad/sixray/sixray",
         retrieve_annotations("/home/ryan/scratchpad/sixray/sixray/annotations.csv")
         # os.path.join(sixray["power"], "images/20"),
-        # parse_annotations(sixray["power"])
+        # retrieve_annotations(os.path.join(sixray["power"], "annotations.csv"))
     )
-
-    # formatting for YOLO training
-    # copy(os.path.join(sixray["power"], "images/20"), "/home/ryan/scratchpad/sixray/sixray")
-    # resize_imgs(
-    #     "/home/ryan/scratchpad/sixray/sixray",
-    #     retrieve_annotations(os.path.join(sixray["power"], "annotations.csv"))
-    # )
