@@ -133,7 +133,7 @@ def write_annotations(annotations, filename):
             for obj in annotations[img]:
                 bounding_box = annotations[img][obj]
                 for coord in bounding_box:
-                    line += str(coord) + ","
+                    line += str(int(coord)) + ","
                 line += str(obj) + " "
 
             file.write(line + "\n")
