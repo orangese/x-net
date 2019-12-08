@@ -161,18 +161,19 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
     :param label_type: either "train" or "test" (default is "train")
     """
 
-    os.chdir(os.path.join(path_to_sixray, "labels", str(sixray_set)))
+    os.chdir(os.path.join(path_to_sixray, "images"))
     parse_index = lambda index: int(index) if int(index) == 1 else 0
 
     labels = {}
     num_parsed, num_objects = 0, 0
-    with open(label_type + ".csv") as label_file:
+    label_file_path = os.path.join(path_to_sixray, "labels", str(sixray_set), label_type + ".csv")
+    with open(label_file_path) as label_file:
         for line in label_file:
             try:
                 split = line.rstrip().split(",")
 
-                img_path = find_img(split[0])
                 img_label = [parse_index(index) for index in split[1:]]
+                img_path = os.path.join(os.getcwd(), split[0] + ".jpg")
 
                 labels[img_path] = img_label
 
@@ -294,8 +295,6 @@ def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
                 x_min, y_min, x_max, y_max = bounding_box
                 cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
 
-        img = apply_brightness_contrast(img, contrast=32)
-
         plt.gcf().canvas.set_window_title("SIXray visualization")
 
         plt.imshow(img, cmap="gray")
@@ -316,6 +315,8 @@ if __name__ == "__main__":
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
     annotated_imgs = os.getenv("HOME") + "/scratchpad/sixray/sixray"
+
+    print(parse_labels(sixray["power"]))
 
     # yolo_benchmark_format(
     #     sixray["air"] + "/images/20", annotated_imgs,
