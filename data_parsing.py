@@ -45,6 +45,11 @@ CLASS_INDEXES = {
 
 # DECORATORS
 def restore_cwd(func):
+    """Decorator to restore `os.getcwd()` in functions that use `os.chdir`
+
+    :param func: function
+
+    """
     @functools.wraps(func)
     def _func(*args, **kwargs):
         cwd = os.getcwd()
@@ -60,10 +65,13 @@ def restore_cwd(func):
 # ANNOTATIONS
 @restore_cwd
 def parse_annotations(path_to_sixray):
-    """Parses SIXray annotations.
+    """Parses SIXray annotations
 
-    :param path_to_sixray: path to SIXray. Assumes annotations stored in "annotations" directory
-    :return: dict with image paths mapped to a dict of one-hot encodings mapped to bounding boxes
+    :param path_to_sixray: path to SIXray-- assumes annotations stored in "annotations" directory
+    :param dict with image paths mapped to a dict of one-hot encodings mapped to bounding boxes
+
+    :return: Annotations dictionary as filepath mapped to dictionary of objects mapped to bounding boxes
+
     """
 
     os.chdir(os.path.join(path_to_sixray, "annotations"))
@@ -106,7 +114,9 @@ def retrieve_annotations(filename):
     """Retrieves parsed annotations from filename
 
     :param filename: filename at which annotations reside
-    :return: annotation dict
+
+    :return: Annotations dictionary as filepath mapped to dictionary of objects mapped to bounding boxes
+
     """
 
     annotations = {}
@@ -130,10 +140,11 @@ def retrieve_annotations(filename):
 
 
 def write_annotations(annotations, filename):
-    """Writes annotations to filename.
+    """Writes annotations to filename
 
     :param annotations: annotations to write to file (generated using parse_annotations)
     :param filename: filename to write annotations to
+
     """
 
     with open(filename, "w") as file:
@@ -154,11 +165,14 @@ def write_annotations(annotations, filename):
 # LABELS
 @restore_cwd
 def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
-    """Parses labels.
+    """Parses SIXray image labels
 
     :param path_to_sixray: path to SIXray dataset
     :param sixray_set: SIXray set (default is 10)
     :param label_type: either "train" or "test" (default is "train")
+
+    :return: Labels as dictionary of object mapped to one-hot encoding
+
     """
 
     os.chdir(os.path.join(path_to_sixray, "images"))
@@ -194,6 +208,7 @@ def copy(src, dest):
 
     :param src: source directory
     :param dest: destination directory
+
     """
 
     os.chdir(src)
@@ -213,6 +228,7 @@ def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="
     :param annotations: dict of annotations (bounding boxes)
     :param target_shape: new shape of images-- doesn't include channels (default: (416, 416))
     :param annotation_file: name of annotation file to write to (default: "annotations.csv")
+
     """
 
     print("Resizing images in {} to {}".format(img_dir, target_shape))
@@ -254,6 +270,9 @@ def apply_brightness_contrast(img, brightness=0, contrast=0):
     :param img: input image
     :param brightness: brightness value (default: 0)
     :param contrast: contrast value (default: 0)
+
+    :return: brightened and contrasted image
+
     """
     if brightness != 0:
         if brightness > 0:
@@ -265,7 +284,7 @@ def apply_brightness_contrast(img, brightness=0, contrast=0):
         alpha_b = (highlight - shadow) / 255.
         gamma_b = shadow
 
-        overlay = cv2.addWeighted(img, alpha_b, input_img, 0, gamma_b)
+        overlay = cv2.addWeighted(img, alpha_b, img, 0, gamma_b)
     else:
         overlay = img.copy()
 
@@ -295,6 +314,8 @@ def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
                 x_min, y_min, x_max, y_max = bounding_box
                 cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
 
+        img = apply_brightness_contrast(img, contrast=32)
+
         plt.gcf().canvas.set_window_title("SIXray visualization")
 
         plt.imshow(img, cmap="gray")
@@ -315,8 +336,6 @@ if __name__ == "__main__":
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
     annotated_imgs = os.getenv("HOME") + "/scratchpad/sixray/sixray"
-
-    print(parse_labels(sixray["power"]))
 
     # yolo_benchmark_format(
     #     sixray["air"] + "/images/20", annotated_imgs,
