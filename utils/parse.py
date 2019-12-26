@@ -1,6 +1,6 @@
 """
 
-"data_parsing.py"
+"utils/parse.py"
 
 Parses SIXray data.
 
@@ -28,19 +28,15 @@ from xml.etree import ElementTree as ET
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 import tqdm
 
 
 # ---------------- HELPERS AND SETUP ----------------
 
 # CONSTANTS
-CLASS_INDEXES = {
-    "gun": 0,
-    "knife": 1,
-    "wrench": 2,
-    "pliers": 3,
-    "scissors": 4
-}
+CLASSES = ["gun", "knife", "wrench", "pliers", "scissors"]
+
 
 
 # DECORATORS
@@ -92,13 +88,13 @@ def parse_annotations(path_to_sixray):
         objects = root.findall("./object")
         for obj in objects:
             try:
-                class_vector = CLASS_INDEXES[parse_text(obj.findall("name"))]
+                class_id = CLASSES.index([parse_text(obj.findall("name"))])
                 bounding_box = parse_bounding_box(obj.find("bndbox"))
 
-                if class_vector in annotations[filename]:
-                    annotations[filename][class_vector].append(bounding_box)
+                if class_id in annotations[filename]:
+                    annotations[filename][class_id].append(bounding_box)
                 else:
-                    annotations[filename][class_vector] = [bounding_box]
+                    annotations[filename][class_id] = [bounding_box]
 
                 num_objs += len(annotations[filename])
             except IndexError:
@@ -264,40 +260,6 @@ def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="
 
 
 # ---------------- DATA VISUALIZATION ----------------
-def apply_brightness_contrast(img, brightness=0, contrast=0):
-    """Applies brightness and contrast (written by @bfris on Stack Overflow)
-
-    :param img: input image
-    :param brightness: brightness value (default: 0)
-    :param contrast: contrast value (default: 0)
-
-    :return: brightened and contrasted image
-
-    """
-    if brightness != 0:
-        if brightness > 0:
-            shadow = brightness
-            highlight = 255
-        else:
-            shadow = 0
-            highlight = 255 + brightness
-        alpha_b = (highlight - shadow) / 255.
-        gamma_b = shadow
-
-        overlay = cv2.addWeighted(img, alpha_b, img, 0, gamma_b)
-    else:
-        overlay = img.copy()
-
-    if contrast != 0:
-        f = 131. * (contrast + 127.) / (127. * (131 - contrast))
-        alpha_c = f
-        gamma_c = 127. * (1. - f)
-
-        overlay = cv2.addWeighted(overlay, alpha_c, overlay, 0, gamma_c)
-
-    return overlay
-
-
 def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
     """Shows bounding boxes on annotated data.
 
@@ -314,14 +276,66 @@ def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
                 x_min, y_min, x_max, y_max = bounding_box
                 cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
 
-        img = apply_brightness_contrast(img, contrast=32)
-
         plt.gcf().canvas.set_window_title("SIXray visualization")
 
         plt.imshow(img, cmap="gray")
         plt.axis("off")
 
         plt.show()
+
+
+# ---------------- DATA PREPARATIONS ----------------
+def prepare_for_eval(net, path_to_sixray, annotations, dump_paths):
+    """Prepares annotations/detections for mAP evaluation
+
+    :param net: YOLO net object
+    :param path_to_sixray: path to SIXray
+    :param annotations: annotations dict
+    :param dump_paths: [truth dumping path, annotation dumping path]
+
+    """
+
+    truth_path, detection_path = dump_paths
+
+    # annotation dump
+    print("Dumping annotations at {}".format(truth_path))
+    for img_path in annotations:
+        with open(os.path.join(truth_path, img_path.strip(".jpg") + ".txt"), "w+") as truth_file:
+            for cls_id in annotations[img_path]:
+                cls = CLASSES[int(cls_id)]
+
+                for bounding_box in annotations[img_path][cls_id]:
+                    line = cls + " "
+
+                    for coord in bounding_box:
+                        line += str(coord) + " "
+
+                    truth_file.write(line + "\n")
+
+    # detection dump
+    print("Dumping predictions at {}".format(detection_path))
+    with tqdm.trange(len(os.listdir(path_to_sixray))) as pbar:
+        for img_name in os.listdir(path_to_sixray):
+            img_path = os.path.join(path_to_sixray, img_name)
+
+            # open and predict
+            try:
+                img = Image.open(img_path)
+            except ValueError:
+                print("Could not open {}".format(img_path))
+                continue
+
+            bounding_boxes, scores, classes = net.detect(img)
+
+            # create and write to file
+            img_predictions = ""
+            for prediction, bounding_box, score in zip(classes, bounding_boxes, scores):
+                img_predictions += "{} {} {} {} {} {}\n".format(prediction, round(score, 3), *bounding_box)
+
+            with open(os.path.join(detection_path, img_name.strip(".jpg") + ".txt"), "w+") as prediction_file:
+                prediction_file.write(img_predictions)
+
+            pbar.update()
 
 
 # ---------------- TESTING ----------------
@@ -332,7 +346,7 @@ if __name__ == "__main__":
         resize_imgs(dest, retrieve_annotations(src_annotations))
 
     sixray = {
-        "power": "/media/ryan/Data/x-ray-datasets/SIXray",
+        "power": "/media/ryan/Data/x-ray-datasets/sixray",
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
     annotated_imgs = os.getenv("HOME") + "/scratchpad/sixray/sixray"
