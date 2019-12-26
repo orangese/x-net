@@ -13,19 +13,6 @@ def rand(a=0, b=1):
 def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jitter=.3, hue=.1, sat=1.5, val=1.5, proc_img=True):
     '''random preprocessing for real-time data augmentation'''
 
-    def letterbox_image(image, size):
-        '''resize image with unchanged aspect ratio using padding'''
-        iw, ih = image.size
-        w, h = size
-        scale = min(w / iw, h / ih)
-        nw = int(iw * scale)
-        nh = int(ih * scale)
-
-        image = image.resize((nw, nh), Image.BICUBIC)
-        new_image = Image.new('RGB', size, (128, 128, 128))
-        new_image.paste(image, ((w - nw) // 2, (h - nh) // 2))
-        return new_image
-
     line = annotation_line.split()
     image = Image.open(line[0])
     iw, ih = image.size
@@ -41,10 +28,9 @@ def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jit
         dy = (h-nh)//2
         image_data=0
         if proc_img:
-            # image = image.resize((nw,nh), Image.BICUBIC)
-            # new_image = Image.new('RGB', (w,h), (128,128,128))
-            # new_image.paste(image, (dx, dy))
-            new_image = letterbox_image(image, (nw, nh))
+            image = image.resize((nw,nh), Image.BICUBIC)
+            new_image = Image.new('RGB', (w,h), (128,128,128))
+            new_image.paste(image, (dx, dy))
             image_data = np.array(new_image)/255.
 
         # correct boxes
