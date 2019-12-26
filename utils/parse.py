@@ -64,7 +64,6 @@ def parse_annotations(path_to_sixray):
     """Parses SIXray annotations
 
     :param path_to_sixray: path to SIXray-- assumes annotations stored in "annotations" directory
-    :param dict with image paths mapped to a dict of one-hot encodings mapped to bounding boxes
 
     :return: Annotations dictionary as filepath mapped to dictionary of objects mapped to bounding boxes
 
