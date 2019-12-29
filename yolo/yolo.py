@@ -62,7 +62,7 @@ class YOLO:
         print("{} loaded".format(self.model_path))
 
         self.img_size_tensor = K.placeholder(shape=(2,))
-        self.bounding_boxes, self.scores, self.classes = yolo_eval(
+        self.bounding_boxes, self.scores, self.predicted_classes = yolo_eval(
             yolo_outputs=self.yolo.output,
             anchors=self.anchors,
             num_classes=len(self.classes),
@@ -102,10 +102,11 @@ class YOLO:
         else:
             raise ValueError("mode is either 'all' or 'freeze'")
 
-    def prepare_training(self, freeze=None, *args, **kwargs):
-        """Makes the yolo training model (adds lambda loss)
+    def prepare_for_training(self, freeze=None, optimizer=keras.optimizers.Adam(1e-4), *args, **kwargs):
+        """Makes and compiles the yolo training model (adds lambda loss)
 
         :param freeze: freeze function. Recommended to use YOLO.freeze
+        :param optimizer: keras optimizer
         :param args: additional params for freeze. YOLO.freeze requires one parameter: "mode"
         :param kwargs: additional params for freeze
 
@@ -143,8 +144,15 @@ class YOLO:
         )([*self.yolo.output, *y_true])
         self.yolo_train = keras.Model([self.yolo.input, *y_true], model_loss)
 
+        # compile the model
+        self.yolo_train.compile(optimizer, loss=lambda y_true, y_pred: y_pred)
+
 
     # DETECTION
+    def transfer_weights(self):
+        """Transfers weights from yolo_train model to yolo_model"""
+        self.yolo.set_weights(self.yolo_train.get_weights())
+
     def detect(self, img):
         """Detects objects in image
 
@@ -161,7 +169,7 @@ class YOLO:
         img = np.expand_dims(img, axis=0)
 
         return self.sess.run(
-            [self.bounding_boxes, self.scores, self.classes],
+            [self.bounding_boxes, self.scores, self.predicted_classes],
             feed_dict={
                 self.yolo.input: img,
                 self.img_size_tensor: original_shape,
