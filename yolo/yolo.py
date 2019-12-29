@@ -36,12 +36,13 @@ class YOLO:
     def __init__(self, model_path, anchors_path, classes_path, backbone="x-net", sess=None, **kwargs):
         self.HYPERPARAMS.update(kwargs)
 
+        self.sess = sess
         self.model_path = model_path
         self.anchors_path = anchors_path
         self.classes_path = classes_path
         self.backbone = backbone
-        self.sess = sess
 
+        self.sess_init()
         self.anchor_and_cls_init()
         self.model_init()
 
@@ -54,9 +55,6 @@ class YOLO:
     def model_init(self):
         assert self.model_path.endswith(".h5"), "only keras .h5 files supported"
         assert self.backbone in self.BACKBONES, "supported backbones are {}".format(self.BACKBONES)
-
-        self.sess = tf.Session(config=tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True)))
-        K.set_session(self.sess)
 
         inputs = keras.layers.Input((*self.HYPERPARAMS["img_size"], 3))
         self.yolo = yolo(inputs, len(self.anchors) // 3, len(self.classes), backbone_type=self.backbone)
@@ -116,7 +114,7 @@ class YOLO:
         # freeze layers
         if freeze is None:
             freeze = self.freeze(self.yolo, mode="all")
-        freeze(self.yolo)
+        freeze(self.yolo, *args, **kwargs)
 
         frozen, trainable = 0, 0
         for layer in self.yolo.layers:
@@ -158,6 +156,7 @@ class YOLO:
         original_shape = img.shape[:2]
 
         img = img.astype(np.float32) / 255.
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, self.HYPERPARAMS["img_size"])
         img = np.expand_dims(img, axis=0)
 
