@@ -38,7 +38,6 @@ import tqdm
 CLASSES = ["gun", "knife", "wrench", "pliers", "scissors"]
 
 
-
 # DECORATORS
 def restore_cwd(func):
     """Decorator to restore `os.getcwd()` in functions that use `os.chdir`
@@ -159,12 +158,13 @@ def write_annotations(annotations, filename):
 
 # LABELS
 @restore_cwd
-def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
+def parse_labels(path_to_sixray, sixray_set=10, label_type="train", full_path=True):
     """Parses SIXray image labels
 
     :param path_to_sixray: path to SIXray dataset
     :param sixray_set: SIXray set (default is 10)
     :param label_type: either "train" or "test" (default is "train")
+    :param full_path: dict keys as full or relative path to image
 
     :return: Labels as dictionary of object mapped to one-hot encoding
 
@@ -183,6 +183,9 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train"):
 
                 img_label = [parse_index(index) for index in split[1:]]
                 img_path = os.path.join(os.getcwd(), split[0] + ".jpg")
+
+                if not full_path:
+                    img_path = img_path[img_path.rfind("/") + 1:]
 
                 labels[img_path] = img_label
 
