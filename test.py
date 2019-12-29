@@ -7,7 +7,6 @@ Various tests and benchmarking for YOLO-based nets.
 """
 
 import os
-import shutil
 
 import cv2
 import matplotlib.pyplot as plt
@@ -28,21 +27,6 @@ if __name__ == "__main__":
     net = YOLO(**defaults)
 
     labels = parse_labels("/media/ryan/Data/x-ray-datasets/sixray", sixray_set=10, label_type="test", full_path=False)
-    # os.chdir("/home/ryan/scratchpad/mAP/input")
-    # print(labels.keys())
-    # for prediction in os.listdir("detection-results"):
-    #     if prediction.replace(".txt", ".jpg") in labels.keys():
-    #         shutil.copy(
-    #             os.path.join("detection-results", prediction),
-    #             os.path.join("detection-results-test", prediction)
-    #         )
-    # for label in os.listdir("ground-truth"):
-    #     if label.replace(".txt", ".jpg") in labels.keys():
-    #         shutil.copy(
-    #             os.path.join("ground-truth", label),
-    #             os.path.join("ground-truth-test", label)
-    #         )
-    #
     annotations = retrieve_annotations("/home/ryan/scratchpad/sixray/sixray/annotations.csv")
 
     # prepare_for_eval(
