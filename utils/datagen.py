@@ -1,3 +1,9 @@
+"""
+
+NOT MY CODE - ALL CREDITS GO TO https://github.com/qqwweee/keras-yolo3
+
+"""
+
 """Miscellaneous utility functions."""
 
 import os
@@ -6,11 +12,12 @@ from PIL import Image
 import numpy as np
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
+from utils.parse import CLASSES
 
 def rand(a=0, b=1):
     return np.random.rand()*(b-a) + a
 
-def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jitter=.3, hue=.1, sat=1.5, val=1.5, proc_img=True):
+def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jitter=.3, hue=.1, sat=1.5, val=1.5, proc_img=True, must_have="any"):
     '''random preprocessing for real-time data augmentation'''
 
     line = annotation_line.split()
@@ -18,6 +25,11 @@ def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jit
     iw, ih = image.size
     h, w = input_shape
     box = np.array([np.array(list(map(int,box.split(',')))) for box in line[1:]])
+    classes = [CLASSES[int(info[info.rfind(",") + 1:])] for info in line[1:]]
+
+    if must_have != "any":
+        if not any(cls == must_have for cls in classes):
+            raise ValueError("{} not found".format(must_have))
 
     if not random:
         # resize image
@@ -105,5 +117,5 @@ if __name__ == "__main__":
     with open('/home/ryan/scratchpad/sixray/sixray/annotations.csv', "r") as annotations:
         lines = annotations.readlines()
 
-    for _ in range(10):
-        get_random_data(lines[1], (416, 416))
+    for line in lines:
+        get_random_data(line, (416, 416), must_have="wrench")
