@@ -37,6 +37,7 @@ class Draw:
         self.font_size = 0.3
         self.font = cv2.FONT_HERSHEY_DUPLEX
         self.thickness = (self.img.shape[0] + self.img.shape[1]) // 300
+        self.font_thickness = 1
 
 
     # DRAWING
@@ -60,11 +61,15 @@ class Draw:
 
             color = self.colors[class_id]
             label = '{} {:.2f}'.format(predicted_class, score)
+            black = (0, 0, 0)
 
             cv2.rectangle(self.img, (x_min, y_min), (x_max, y_max), color, self.thickness)
 
-            cv2.rectangle(self.img, (x_min, y_max - 20), (x_max, y_max), color, cv2.FILLED)
-            cv2.putText(self.img, label, (x_min + 6, y_max - 6), self.font, self.font_size, (0, 0, 0), thickness=1)
+            text_size, _ = cv2.getTextSize(label, self.font, self.font_size, self.font_thickness)
+            width, height = text_size
+
+            cv2.rectangle(self.img, (x_min - 1, y_max - 20), (x_min + width + 5, y_max), color, cv2.FILLED)
+            cv2.putText(self.img, label, (x_min, y_max - 6), self.font, self.font_size, black, self.font_thickness)
 
 
     # CLASSMETHODS
