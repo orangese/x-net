@@ -112,10 +112,15 @@ def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jit
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     os.chdir("/home/ryan/scratchpad/sixray/sixray/")
 
     with open('/home/ryan/scratchpad/sixray/sixray/annotations.csv', "r") as annotations:
         lines = annotations.readlines()
 
     for line in lines:
-        get_random_data(line, (416, 416), must_have="wrench")
+        img, box = get_random_data(line, (416, 416))
+
+        plt.imshow(img)
+        plt.show()
