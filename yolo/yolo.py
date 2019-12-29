@@ -12,7 +12,7 @@ from keras import backend as K
 import numpy as np
 import tensorflow as tf
 
-from yolo.head.backend import yolo_eval
+from yolo.head.backend import yolo_eval, yolo_loss
 from yolo.head.join import yolo
 
 
@@ -33,13 +33,14 @@ class YOLO:
 
 
     # INITS
-    def __init__(self, model_path, anchors_path, classes_path, backbone="x-net", **kwargs):
+    def __init__(self, model_path, anchors_path, classes_path, backbone="x-net", sess=None, **kwargs):
         self.HYPERPARAMS.update(kwargs)
 
         self.model_path = model_path
         self.anchors_path = anchors_path
         self.classes_path = classes_path
         self.backbone = backbone
+        self.sess = sess
 
         self.anchor_and_cls_init()
         self.model_init()
@@ -59,7 +60,7 @@ class YOLO:
 
         inputs = keras.layers.Input((*self.HYPERPARAMS["img_size"], 3))
         self.yolo = yolo(inputs, len(self.anchors) // 3, len(self.classes), backbone_type=self.backbone)
-        self.yolo.load_weights(self.model_path)
+        self.yolo.load_weights(self.model_path, by_name=True, skip_mismatch=True)
         print("{} loaded".format(self.model_path))
 
         self.img_size_tensor = K.placeholder(shape=(2,))
@@ -72,6 +73,78 @@ class YOLO:
             iou_threshold=self.HYPERPARAMS["iou"]
         )
 
+    def sess_init(self):
+        if self.sess is None:
+            config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+            K.set_session(tf.Session(config=config))
+            self.sess = K.get_session()
+        else:
+            K.set_session(self.sess)
+
+
+    # TRAINING
+    @staticmethod
+    def freeze(yolo, mode):
+        """Freezes a yolo model
+
+        :param yolo: yolo as keras model
+        :param mode: either "all" (freeze all) or "finetune" (freeze all but head and branches)
+
+        """
+
+        if mode == "all":
+            for layer in yolo.layers:
+                layer.trainable = False
+        elif mode == "finetune":
+            for layer in yolo.layers:
+                if "branch" in layer.name or "yolo" in layer.name:
+                    layer.trainable = True
+                else:
+                    layer.trainable = False
+        else:
+            raise ValueError("mode is either 'all' or 'freeze'")
+
+    def prepare_training(self, freeze=None, *args, **kwargs):
+        """Makes the yolo training model (adds lambda loss)
+
+        :param freeze: freeze function. Recommended to use YOLO.freeze
+        :param args: additional params for freeze. YOLO.freeze requires one parameter: "mode"
+        :param kwargs: additional params for freeze
+
+        """
+
+        # freeze layers
+        if freeze is None:
+            freeze = self.freeze(self.yolo, mode="all")
+        freeze(self.yolo)
+
+        frozen, trainable = 0, 0
+        for layer in self.yolo.layers:
+            if layer.trainable:
+                trainable += 1
+            else:
+                frozen += 1
+        print("{} layers out of {} are trainable".format(trainable, frozen + trainable))
+
+        # add lambda loss
+        height, width = self.HYPERPARAMS["img_size"]
+        heights_and_widths = [32, 16, 8]
+
+        y_true = [keras.layers.Input((height // h_or_w, width // h_or_w, len(self.anchors) // 3, len(self.classes) + 5))
+                  for h_or_w in heights_and_widths]
+
+        model_loss = keras.layers.Lambda(
+            yolo_loss,
+            output_shape=(1,),
+            name="yolo_loss",
+            arguments={
+                "anchors": self.anchors,
+                "num_classes": len(self.classes),
+                "ignore_thresh": self.HYPERPARAMS["score"]  # 0.5
+            }
+        )([*self.yolo.output, *y_true])
+        self.yolo_train = keras.Model([self.yolo.input, *y_true], model_loss)
+
 
     # DETECTION
     def detect(self, img):
@@ -79,6 +152,7 @@ class YOLO:
 
         :param img: image as array with shape (h, w, 3)
         :returns: boxes, scores, classes
+
         """
 
         original_shape = img.shape[:2]
