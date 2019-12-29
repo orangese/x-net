@@ -56,8 +56,6 @@ def xnet_body(x):
 
     # branch-off: (n / 8, n / 8, 1024)
     branch = keras.layers.Concatenate(name="final_branch_concat")([branch_8, branch_16, branch_32])
-    # branch = residual_blocks(branch, 512, 1, identifier="final_branch_1_512")
-    # branch = residual_blocks(branch, 512, 1, identifier="final_branch_2_512")
     branch = keras.layers.ZeroPadding2D(((1, 0), (1, 0)), name="final_branch_1_zero_padding")(branch)
     branch = conv_bn_leaky(branch, "final_branch_1", 512, (3, 3), strides=(2, 2))
     branch = keras.layers.ZeroPadding2D(((1, 0), (1, 0)), name="final_branch_2_zero_padding")(branch)

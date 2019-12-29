@@ -79,5 +79,5 @@ def write_anchors(anchor_file, annotation_file, num_anchors):
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
     num_clusters = 9  # 6 for tiny yolo
-    filename = "/home/ryan/scratchpad/sixray/sixray/annotations.csv"
+    filename = "/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv"
     print(generate_anchors(filename, num_clusters))

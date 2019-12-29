@@ -27,18 +27,18 @@ if __name__ == "__main__":
     net = YOLO(**defaults)
 
     labels = parse_labels("/media/ryan/Data/x-ray-datasets/sixray", sixray_set=10, label_type="test", full_path=False)
-    annotations = retrieve_annotations("/home/ryan/scratchpad/sixray/sixray/annotations.csv")
+    annotations = retrieve_annotations("/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv")
 
     # prepare_for_eval(
     #    net,
-    #    "/home/ryan/scratchpad/sixray/sixray2",
-    #    retrieve_annotations("/media/ryan/Data/x-ray-datasets/SIXray/annotations.csv"),
+    #    "/media/ryan/Data/x-ray-datasets/sixray/images",
+    #    retrieve_annotations("/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv"),
     #    ["/home/ryan/scratchpad/mAP/input/ground-truth-letterbox", "/home/ryan/scratchpad/mAP/input/detection-results-letterbox"]
     # )
 
-    img_dir_path = "/home/ryan/scratchpad/sixray/sixray/"
+    img_dir_path = "/media/ryan/Data/x-ray-datasets/sixray/images"
     for img_path in os.listdir(img_dir_path):
-        if img_path.endswith(".jpg") or img_path.endswith(".png"):
+        if "P" in img_path and img_path.endswith(".jpg") or img_path.endswith(".png"):
             img = cv2.imread(os.path.join(img_dir_path, img_path))
 
             bounding_boxes, scores, classes = net.detect(img)

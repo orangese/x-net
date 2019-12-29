@@ -351,7 +351,7 @@ if __name__ == "__main__":
         "power": "/media/ryan/Data/x-ray-datasets/sixray",
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
-    annotated_imgs = os.getenv("HOME") + "/scratchpad/sixray/sixray"
+    annotated_imgs = os.getenv("HOME") + "/media/ryan/Data/x-ray-datasets/sixray/images/"
 
     # yolo_benchmark_format(
     #     sixray["air"] + "/images/20", annotated_imgs,

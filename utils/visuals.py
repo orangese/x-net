@@ -25,6 +25,7 @@ class Draw:
         self.font_init()
 
     def color_init(self):
+        # TAKEN FROM https://github.com/qqwweee/keras-yolo3
         hsv_tuples = [(x / len(self.classes), 1., 1.) for x in range(len(self.classes))]
         self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
         self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
@@ -33,14 +34,21 @@ class Draw:
         np.random.seed(None)  # Reset seed to default.
 
     def font_init(self):
-        print(int(9e-4 * self.img.shape[1] + 0.5))
-        self.font_size = 0.5
+        self.font_size = 0.3
         self.font = cv2.FONT_HERSHEY_DUPLEX
         self.thickness = (self.img.shape[0] + self.img.shape[1]) // 300
 
 
     # DRAWING
     def draw(self, bounding_boxes, scores, classes):
+        """Draws bounding box, score, and prediction on image
+
+        :param bounding_boxes: bounding boxes as array
+        :param scores: confidence scores as list or array
+        :param classes: predicted classes as list or array
+
+        """
+
         for bounding_box, score, class_id in zip(bounding_boxes, scores, classes):
             predicted_class = self.classes[class_id]
 
@@ -62,6 +70,17 @@ class Draw:
     # CLASSMETHODS
     @classmethod
     def draw_on_img(cls, img, bounding_boxes, scores, classes, all_classes):
+        """Draws on image without creating an instance of Draw
+
+        :param img: image to draw on
+        :param bounding_boxes: bounding boxes for image
+        :param scores: confidence scores
+        :param classes: predicted classes
+        :param all_classes: full class list
+        :returns: drawn-on image
+
+        """
+
         drawer = cls(img, all_classes)
         drawer.draw(bounding_boxes, scores, classes)
         return drawer.img

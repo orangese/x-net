@@ -42,6 +42,7 @@ def get_config(key):
     :raise: KeyError if key is not found
 
     """
+
     try:
         return CONFIGS[key].copy()
     except KeyError:
