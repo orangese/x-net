@@ -42,8 +42,7 @@ FINETUNE_CONFIG = {
 }
 
 CALLBACKS = [
-    keras.callbacks.TensorBoard(TRAIN_CONFIG["log_dir"], histogram_freq=1, batch_size=1, write_grads=True,
-                                write_images=True),
+    keras.callbacks.TensorBoard(TRAIN_CONFIG["log_dir"], write_images=True),
     keras.callbacks.ModelCheckpoint(
         TRAIN_CONFIG["log_dir"] + "ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5",
         save_weights_only=True, save_best_only=True, period=3),

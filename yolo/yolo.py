@@ -168,10 +168,10 @@ class YOLO:
 
         :param annotation_path: path to annotations file
         :param save_path: path to which to save the weights of the model
-        :param epochs: number of epochs to train for
-        :param batch_size: batch size
-        :param val_split: decimal percent of data used for validaiton
-        :param callbacks: list of keras callbacks objects
+        :param epochs: number of epochs to train for (default: 1)
+        :param batch_size: batch size (default: 1)
+        :param val_split: decimal percent of data used for validation (default: 0.1)
+        :param callbacks: list of keras callbacks objects (default: None)
         :returns: keras History object
 
         """
@@ -184,7 +184,7 @@ class YOLO:
             annotations = annotation_file.readlines()
             annotations = shuffle_with_seed(annotations)
 
-        # set up training
+        # set up data
         num_validation = int(len(annotations) * val_split)
         num_train = len(annotations) - num_validation
 
