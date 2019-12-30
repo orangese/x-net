@@ -2,7 +2,7 @@
 
 A deep convolutional neural model for X-ray threat detection.
 
-__Reuses some code from https://github.com/qqwweee/keras-yolo3.__
+__Reuses code from and is heavily inspired by https://github.com/qqwweee/keras-yolo3.__
 
 ## About
 
