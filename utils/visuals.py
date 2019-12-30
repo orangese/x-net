@@ -10,14 +10,23 @@ Visuals utils.
 import colorsys
 
 import cv2
-import numpy as np
+
+from utils.random import shuffle_with_seed
 
 
+# ---------------- DRAW ----------------
 class Draw:
     """Draws bounding box and label"""
 
     # INITS
     def __init__(self, img, classes):
+        """Initializes Draw object
+
+        :param img: img to draw on
+        :param classes: list of all possible classes
+
+        """
+
         self.img = img
         self.classes = classes
 
@@ -25,15 +34,14 @@ class Draw:
         self.font_init()
 
     def color_init(self):
-        # TAKEN FROM https://github.com/qqwweee/keras-yolo3
+        """Initializes random colors. Taken from https://github.com/qqwweee/keras-yolo3"""
         hsv_tuples = [(x / len(self.classes), 1., 1.) for x in range(len(self.classes))]
-        self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-        self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
-        np.random.seed(10101)  # Fixed seed for consistent colors across runs.
-        np.random.shuffle(self.colors)  # Shuffle colors to decorrelate adjacent classes.
-        np.random.seed(None)  # Reset seed to default.
+        colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+        colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+        self.colors = shuffle_with_seed(colors).tolist()
 
     def font_init(self):
+        """Initializes font and line settings"""
         self.font_size = 0.3
         self.font = cv2.FONT_HERSHEY_DUPLEX
         self.thickness = (self.img.shape[0] + self.img.shape[1]) // 300
