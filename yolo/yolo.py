@@ -160,28 +160,27 @@ class YOLO:
         :param batch_size: batch size
         :param val_split: decimal percent of data used for validaiton
         :param callbacks: list of keras callbacks objects
+        :returns: keras History object
 
         """
 
-        def get_annotations():
-            with open(annotation_path, "r") as annotation_file:
-                annotations = annotation_file.readlines()
+        # get annotations
+        with open(annotation_path, "r") as annotation_file:
+            annotations = annotation_file.readlines()
 
-            np.random.seed(10101)
-            np.random.shuffle(annotations)
-            np.random.seed(None)
+        np.random.seed(10101)
+        np.random.shuffle(annotations)
+        np.random.seed(None)
 
-            return annotations
-
-        annotations = get_annotations()
-
+        # set up training
         num_validation = int(len(annotations) * val_split)
         num_train = len(annotations) - num_validation
 
         print("Epochs: {}\nBatch size: {}\nTrain: {} samples\nValidation: {} samples".format(
             epochs, batch_size, num_train, num_validation))
 
-        self._yolo_train.fit_generator(
+        # train
+        history = self._yolo_train.fit_generator(
             generator=data_generator(
                 annotations[:num_train],
                 batch_size,
@@ -207,6 +206,8 @@ class YOLO:
         # transfer trained weights to yolo model
         self.yolo.set_weights(self._yolo_train.get_weights())
         del self._yolo_train
+
+        return history
 
 
     # DETECTION
