@@ -13,6 +13,7 @@ import numpy as np
 import tensorflow as tf
 
 from utils.datagen import data_generator
+from utils.random import shuffle_with_seed
 from yolo.head.backend import yolo_eval, yolo_loss
 from yolo.head.join import yolo
 
@@ -21,6 +22,7 @@ from yolo.head.join import yolo
 class YOLO:
     """YOLO as a class"""
 
+    # CONFIGS
     HYPERPARAMS = {
         "img_size": (416, 416),
         "score": 0.3,
@@ -35,6 +37,17 @@ class YOLO:
 
     # INITS
     def __init__(self, model_path, anchors_path, classes_path, backbone="x-net", sess=None, **kwargs):
+        """Initializes YOLO object
+
+        :param model_path: path to YOLO weights
+        :param anchors_path: path to YOLO anchors
+        :param classes_path: path to YOLO classes
+        :param backbone: backbone type, see YOLO.BACKBONES (default: 'x-net')
+        :param sess: tensorflow Session (default: None)
+        :param kwargs: overrides YOLO.HYPERPARAMETERS
+
+        """
+
         self.HYPERPARAMS.update(kwargs)
 
         self.sess = sess
@@ -47,13 +60,24 @@ class YOLO:
         self.anchor_and_cls_init()
         self.model_init()
 
+    def sess_init(self):
+        """Initializes session with GPU growth"""
+        if self.sess is None:
+            config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+            K.set_session(tf.Session(config=config))
+            self.sess = K.get_session()
+        else:
+            K.set_session(self.sess)
+
     def anchor_and_cls_init(self):
+        """Reads anchors and classes from paths"""
         with open(self.anchors_path) as anchor_file:
             self.anchors = np.array(anchor_file.readline().split(","), dtype=np.float32).reshape(-1, 2)
         with open(self.classes_path) as classes_file:
             self.classes = [cls.strip() for cls in classes_file]
 
     def model_init(self):
+        """Initializes YOLO graph"""
         assert self.model_path.endswith(".h5"), "only keras .h5 files supported"
         assert self.backbone in self.BACKBONES, "supported backbones are {}".format(self.BACKBONES)
 
@@ -72,21 +96,13 @@ class YOLO:
             iou_threshold=self.HYPERPARAMS["iou"]
         )
 
-    def sess_init(self):
-        if self.sess is None:
-            config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-            K.set_session(tf.Session(config=config))
-            self.sess = K.get_session()
-        else:
-            K.set_session(self.sess)
-
 
     # TRAINING UTILS
     @staticmethod
     def freeze(yolo, mode):
-        """Freezes a yolo model
+        """Freezes a YOLO model
 
-        :param yolo: yolo as keras model
+        :param yolo: YOLO as keras model
         :param mode: either "full train" (freeze none) or "finetune" (freeze all but head and branches)
 
         """
@@ -106,7 +122,7 @@ class YOLO:
 
     # TRAINING
     def prepare_for_training(self, freeze=None, optimizer=keras.optimizers.Adam(1e-4), *args, **kwargs):
-        """Makes and compiles the yolo training model (adds lambda loss)
+        """Makes and compiles the YOLO training model (adds lambda loss)
 
         :param freeze: freeze function. Recommended to use YOLO.freeze
         :param optimizer: keras optimizer
@@ -120,13 +136,10 @@ class YOLO:
             freeze = self.freeze(self.yolo, mode="full train")
         freeze(self.yolo, *args, **kwargs)
 
-        frozen, trainable = 0, 0
-        for layer in self.yolo.layers:
-            if layer.trainable:
-                trainable += 1
-            else:
-                frozen += 1
-        print("{} layers out of {} are trainable".format(trainable, frozen + trainable))
+        print("{} params out of {} are trainable".format(
+            len(self.yolo.trainable_weights),
+            len(self.yolo.non_trainable_weights))
+        )
 
         # add lambda loss
         height, width = self.HYPERPARAMS["img_size"]
@@ -148,11 +161,10 @@ class YOLO:
 
         # make and compile
         self._yolo_train = keras.Model([self.yolo.input, *y_true], loss_layer)
-
         self._yolo_train.compile(optimizer, loss=lambda y_true, y_pred: y_pred)
 
     def train(self, annotation_path, save_path, epochs=1, batch_size=1, val_split=0.1, callbacks=None):
-        """Train a yolo model
+        """Trains a YOLO model
 
         :param annotation_path: path to annotations file
         :param save_path: path to which to save the weights of the model
@@ -164,13 +176,13 @@ class YOLO:
 
         """
 
+        # make sure training model has been initialized
+        assert hasattr(self, "_yolo_train"), "prepare_for_training(...) must be called before train(...)"
+
         # get annotations
         with open(annotation_path, "r") as annotation_file:
             annotations = annotation_file.readlines()
-
-        np.random.seed(10101)
-        np.random.shuffle(annotations)
-        np.random.seed(None)
+            annotations = shuffle_with_seed(annotations)
 
         # set up training
         num_validation = int(len(annotations) * val_split)
@@ -201,6 +213,7 @@ class YOLO:
             callbacks=callbacks
         )
 
+        # save weights
         self._yolo_train.save_weights(save_path)
 
         # transfer trained weights to yolo model
@@ -211,10 +224,11 @@ class YOLO:
 
 
     # DETECTION
-    def detect(self, img):
+    def detect(self, img, is_bgr=True):
         """Detects objects in image
 
         :param img: image as array with shape (h, w, 3)
+        :param is_bgr: whether or not the image is in BGR channel mode (default: True)
         :returns: boxes, scores, classes
 
         """
@@ -222,7 +236,8 @@ class YOLO:
         original_shape = img.shape[:2]
 
         img = img.astype(np.float32) / 255.
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if is_bgr:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, self.HYPERPARAMS["img_size"])
         img = np.expand_dims(img, axis=0)
 

@@ -11,7 +11,7 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 
-from utils.parse import CLASSES, parse_labels, retrieve_annotations
+from utils.parse import CLASSES, parse_labels, retrieve_annotations, write_annotations
 from utils.visuals import Draw
 from yolo.yolo import YOLO
 
@@ -28,6 +28,12 @@ if __name__ == "__main__":
 
     labels = parse_labels("/media/ryan/Data/x-ray-datasets/sixray", sixray_set=10, label_type="test", full_path=False)
     annotations = retrieve_annotations("/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv")
+
+    # os.chdir("/media/ryan/Data/x-ray-datasets/sixray/images")
+    # for file in os.listdir(os.getcwd()):
+    #     if file.endswith("jpg") and "N" in file:
+    #         annotations[file] = ""
+    # write_annotations(annotations, "/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv")
 
     # prepare_for_eval(
     #    net,
