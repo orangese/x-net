@@ -12,6 +12,7 @@ from keras import backend as K
 import numpy as np
 import tensorflow as tf
 
+from utils.datagen import data_generator
 from yolo.head.backend import yolo_eval, yolo_loss
 from yolo.head.join import yolo
 
@@ -80,19 +81,19 @@ class YOLO:
             K.set_session(self.sess)
 
 
-    # TRAINING
+    # TRAINING UTILS
     @staticmethod
     def freeze(yolo, mode):
         """Freezes a yolo model
 
         :param yolo: yolo as keras model
-        :param mode: either "all" (freeze all) or "finetune" (freeze all but head and branches)
+        :param mode: either "full train" (freeze none) or "finetune" (freeze all but head and branches)
 
         """
 
-        if mode == "all":
+        if mode == "full train":
             for layer in yolo.layers:
-                layer.trainable = False
+                layer.trainable = True
         elif mode == "finetune":
             for layer in yolo.layers:
                 if "branch" in layer.name or "yolo" in layer.name:
@@ -100,8 +101,10 @@ class YOLO:
                 else:
                     layer.trainable = False
         else:
-            raise ValueError("mode is either 'all' or 'freeze'")
+            raise ValueError("mode is either 'full train' or 'finetune'")
 
+
+    # TRAINING
     def prepare_for_training(self, freeze=None, optimizer=keras.optimizers.Adam(1e-4), *args, **kwargs):
         """Makes and compiles the yolo training model (adds lambda loss)
 
@@ -114,7 +117,7 @@ class YOLO:
 
         # freeze layers
         if freeze is None:
-            freeze = self.freeze(self.yolo, mode="all")
+            freeze = self.freeze(self.yolo, mode="full train")
         freeze(self.yolo, *args, **kwargs)
 
         frozen, trainable = 0, 0
@@ -132,7 +135,7 @@ class YOLO:
         y_true = [keras.layers.Input((height // h_or_w, width // h_or_w, len(self.anchors) // 3, len(self.classes) + 5))
                   for h_or_w in heights_and_widths]
 
-        model_loss = keras.layers.Lambda(
+        loss_layer = keras.layers.Lambda(
             yolo_loss,
             output_shape=(1,),
             name="yolo_loss",
@@ -142,17 +145,71 @@ class YOLO:
                 "ignore_thresh": self.HYPERPARAMS["score"]  # 0.5
             }
         )([*self.yolo.output, *y_true])
-        self.yolo_train = keras.Model([self.yolo.input, *y_true], model_loss)
 
-        # compile the model
-        self.yolo_train.compile(optimizer, loss=lambda y_true, y_pred: y_pred)
+        # make and compile
+        self._yolo_train = keras.Model([self.yolo.input, *y_true], loss_layer)
+
+        self._yolo_train.compile(optimizer, loss=lambda y_true, y_pred: y_pred)
+
+    def train(self, annotation_path, save_path, epochs=1, batch_size=1, val_split=0.1, callbacks=None):
+        """Train a yolo model
+
+        :param annotation_path: path to annotations file
+        :param save_path: path to which to save the weights of the model
+        :param epochs: number of epochs to train for
+        :param batch_size: batch size
+        :param val_split: decimal percent of data used for validaiton
+        :param callbacks: list of keras callbacks objects
+
+        """
+
+        def get_annotations():
+            with open(annotation_path, "r") as annotation_file:
+                annotations = annotation_file.readlines()
+
+            np.random.seed(10101)
+            np.random.shuffle(annotations)
+            np.random.seed(None)
+
+            return annotations
+
+        annotations = get_annotations()
+
+        num_validation = int(len(annotations) * val_split)
+        num_train = len(annotations) - num_validation
+
+        print("Epochs: {}\nBatch size: {}\nTrain: {} samples\nValidation: {} samples".format(
+            epochs, batch_size, num_train, num_validation))
+
+        self._yolo_train.fit_generator(
+            generator=data_generator(
+                annotations[:num_train],
+                batch_size,
+                self.HYPERPARAMS["img_size"],
+                self.anchors,
+                len(self.classes)
+            ),
+            steps_per_epoch=max(1, num_train // batch_size),
+            validation_data=data_generator(
+                annotations[num_train:],
+                batch_size,
+                self.HYPERPARAMS["img_size"],
+                self.anchors,
+                len(self.classes)
+            ),
+            validation_steps=max(1, num_validation // batch_size),
+            epochs=epochs,
+            callbacks=callbacks
+        )
+
+        self._yolo_train.save_weights(save_path)
+
+        # transfer trained weights to yolo model
+        self.yolo.set_weights(self._yolo_train.get_weights())
+        del self._yolo_train
 
 
     # DETECTION
-    def transfer_weights(self):
-        """Transfers weights from yolo_train model to yolo_model"""
-        self.yolo.set_weights(self.yolo_train.get_weights())
-
     def detect(self, img):
         """Detects objects in image
 
