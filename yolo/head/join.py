@@ -1,6 +1,6 @@
 """
 
-"utils/join.py"
+"yolo/head/join.py"
 
 Contains YOLO and Tiny YOLO factories.
 
