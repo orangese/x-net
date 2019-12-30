@@ -13,4 +13,4 @@ __pycache__/
 /*.egg-info
 
 # for now
-train.py
+train2.py
