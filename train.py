@@ -15,7 +15,6 @@ from yolo.yolo import YOLO
 
 
 # ---------------- SETUP ----------------
-
 DATASET = "/media/ryan/Data/x-ray-datasets/sixray/images/"
 
 DEFAULTS = {
@@ -25,7 +24,7 @@ DEFAULTS = {
 }
 
 TRAIN_CONFIG = {
-    "log_dir": "/home/ryan/models/sixray/x-net/models/third/stage_1",
+    "log_dir": "/home/ryan/models/sixray/x-net/models/third/stage_1/",
     "annotation_path": "/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv",
     "val_split": 0.1,
     "epochs": 50,
@@ -43,7 +42,8 @@ FINETUNE_CONFIG = {
 }
 
 CALLBACKS = [
-    keras.callbacks.TensorBoard(TRAIN_CONFIG["log_dir"]),
+    keras.callbacks.TensorBoard(TRAIN_CONFIG["log_dir"], histogram_freq=1, batch_size=1, write_grads=True,
+                                write_images=True),
     keras.callbacks.ModelCheckpoint(
         TRAIN_CONFIG["log_dir"] + "ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5",
         save_weights_only=True, save_best_only=True, period=3),
@@ -103,12 +103,13 @@ def train_xnet(dataset=None, defaults=None, train_config=None, callbacks=None, m
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
     train_xnet(
-        defaults={
-            "model_path": "/home/ryan/models/coco/yolov3/models/yolo_weights.h5"
-        },
+        # defaults={
+        #     "model_path": "/home/ryan/models/sixray/yolov3/yolo_weights_sixray.h5"
+        # },
         train_config={
-            "batch_size": 1,
-            "optimizer": keras.optimizers.Adam(learning_rate=1e-4)
+            "log_dir": "/home/ryan/models/sixray/x-net/models/first/stage_1_v2/",
+            "batch_size": 4,
+            "optimizer": keras.optimizers.Adam(learning_rate=1e-3)
         },
-        mode="full train"
+        mode="finetune"
     )
