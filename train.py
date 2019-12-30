@@ -24,7 +24,7 @@ DEFAULTS = {
 }
 
 TRAIN_CONFIG = {
-    "log_dir": "/home/ryan/models/sixray/x-net/models/third/stage_1/",
+    "log_dir": "/home/ryan/models/sixray/x-net/models/first/final_v2/",
     "annotation_path": "/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv",
     "val_split": 0.1,
     "epochs": 50,
@@ -102,13 +102,13 @@ def train_xnet(dataset=None, defaults=None, train_config=None, callbacks=None, m
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
     train_xnet(
-        # defaults={
-        #     "model_path": "/home/ryan/models/sixray/yolov3/yolo_weights_sixray.h5"
-        # },
+        defaults={
+            "model_path": "/home/ryan/models/sixray/x-net/models/first/stage_1_v2/train_weights_v1.h5",
+        },
         train_config={
-            "log_dir": "/home/ryan/models/sixray/x-net/models/first/stage_1_v2/",
-            "batch_size": 4,
+            "log_dir": "/home/ryan/models/sixray/x-net/models/first/final_v2/",
+            "batch_size": 1,
             "optimizer": keras.optimizers.Adam(learning_rate=1e-3)
         },
-        mode="finetune"
+        mode="full train"
     )

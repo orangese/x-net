@@ -136,10 +136,13 @@ class YOLO:
             freeze = self.freeze(self.yolo, mode="full train")
         freeze(self.yolo, *args, **kwargs)
 
-        print("{} params out of {} are trainable".format(
-            len(self.yolo.trainable_weights),
-            len(self.yolo.non_trainable_weights))
-        )
+        frozen, trainable = 0, 0
+        for layer in self.yolo.layers:
+            if layer.trainable:
+                trainable += 1
+            else:
+                frozen += 1
+        print("{} layers out of {} are trainable".format(trainable, frozen + trainable))
 
         # add lambda loss
         height, width = self.HYPERPARAMS["img_size"]
