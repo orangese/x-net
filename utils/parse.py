@@ -237,7 +237,7 @@ def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="
                 img = cv2.imread(os.path.join(img_dir, img_path))
 
                 x_scale = target_shape[0] / img.shape[1]
-                y_scale = target_shape[0] / img.shape[0]
+                y_scale = target_shape[1] / img.shape[0]
 
                 for obj in annotations[img_path]:
                     bounding_boxes = []
@@ -287,57 +287,63 @@ def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
 
 
 # ---------------- DATA PREPARATIONS ----------------
-def prepare_for_eval(net, path_to_sixray, annotations, dump_paths):
+def prepare_for_eval(net, annotations, labels, dump_paths):
     """Prepares annotations/detections for mAP evaluation
 
     :param net: YOLO net object
-    :param path_to_sixray: path to SIXray
     :param annotations: annotations dict
-    :param dump_paths: [truth dumping path, annotation dumping path]
+    :param labels: labels dict (full_path=True)
+    :param dump_paths: [truth dumping path, annotation dumping path]. Each can be None
 
     """
 
     truth_path, detection_path = dump_paths
 
     # annotation dump
-    print("Dumping annotations at {}".format(truth_path))
-    for img_path in annotations:
-        with open(os.path.join(truth_path, img_path.strip(".jpg") + ".txt"), "w+") as truth_file:
-            for cls_id in annotations[img_path]:
-                cls = CLASSES[int(cls_id)]
+    if truth_path is not None:
+        print("Dumping annotations at {}".format(truth_path))
+        for img_path in annotations:
+            with open(os.path.join(truth_path, img_path.replace("jpg", "txt")), "w+") as truth_file:
+                for cls_id in annotations[img_path]:
+                    cls = CLASSES[int(cls_id)]
 
-                for bounding_box in annotations[img_path][cls_id]:
-                    line = cls + " "
+                    for bounding_box in annotations[img_path][cls_id]:
+                        line = cls + " "
 
-                    for coord in bounding_box:
-                        line += str(coord) + " "
+                        for coord in bounding_box:
+                            line += str(coord) + " "
 
-                    truth_file.write(line + "\n")
+                        truth_file.write(line + "\n")
 
     # detection dump
-    print("Dumping predictions at {}".format(detection_path))
-    with tqdm.trange(len(os.listdir(path_to_sixray))) as pbar:
-        for img_name in os.listdir(path_to_sixray):
-            img_path = os.path.join(path_to_sixray, img_name)
+    if detection_path is not None:
+        print("Dumping predictions at {}".format(detection_path))
+        labels = [img_path for img_path in labels if "P" in img_path]
 
-            # open and predict
-            try:
-                img = Image.open(img_path)
-            except ValueError:
-                print("Could not open {}".format(img_path))
-                continue
+        with tqdm.trange(len(labels)) as pbar:
+            for img_path in labels:
+                # open and predict
+                try:
+                    img = cv2.imread(img_path)
+                except ValueError:
+                    print("Could not open {}".format(img_path))
+                    continue
 
-            bounding_boxes, scores, classes = net.detect(img)
+                bounding_boxes, scores, classes = net.detect(img)
 
-            # create and write to file
-            img_predictions = ""
-            for prediction, bounding_box, score in zip(classes, bounding_boxes, scores):
-                img_predictions += "{} {} {} {} {} {}\n".format(prediction, round(score, 3), *bounding_box)
+                # create and write to file
+                img_predictions = ""
+                for cls_id, bounding_box, score in zip(classes, bounding_boxes, scores):
+                    prediction = CLASSES[cls_id]
+                    bounding_box = [int(round(coord)) for coord in bounding_box]
 
-            with open(os.path.join(detection_path, img_name.strip(".jpg") + ".txt"), "w+") as prediction_file:
-                prediction_file.write(img_predictions)
+                    img_predictions += "{} {} {} {} {} {}\n".format(prediction, round(score, 3), *bounding_box)
 
-            pbar.update()
+                path = img_path[img_path.rfind("/") + 1:].replace("jpg", "txt")
+                with open(os.path.join(detection_path, path), "w+") as prediction_file:
+                    prediction_file.write(img_predictions)
+
+                pbar.update()
 
 
 # ---------------- TESTING ----------------
