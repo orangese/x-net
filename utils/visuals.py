@@ -10,6 +10,9 @@ Visuals utils.
 import colorsys
 
 import cv2
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
 
 from utils.random import shuffle_with_seed
 
@@ -97,3 +100,107 @@ class Draw:
         drawer = cls(img, all_classes)
         drawer.draw(bounding_boxes, scores, classes)
         return drawer.img
+
+
+
+# ---------------- PLOT RESULTS ----------------
+
+# RESULTS
+classification_results = {
+    "ResNet101": (0.045, 77.38),
+    "ResNet101 + CHR": (0.05, 79.37),
+    "Inception-v3": (0.07 / 6, 77.01),
+    "Inception-v3 + CHR": (0.07 / 6, 79.49),
+    "YOLOv3": (0.07, 78.70),
+    "X-Net": (0.1, 83.45),
+    "TSA": (5., 30.0)
+}
+
+localization_results = {
+    "ResNet101": (0.045, 50.10),
+    "ResNet101 + CHR": (0.05, 51.35),
+    "Inception-v3": (0.07 / 6, 62.92),
+    "Inception-v3 + CHR": (0.07 / 6, 63.54),
+    "YOLOv3": (0.07, 53.68),
+    "X-Net": (0.1, 74.93),
+    "TSA": (5., 30.0)
+}
+
+
+# PLOT FUNC
+def plot(results, mode):
+    """Plot results of X-Net vs. TSA vs. other models
+
+    :param results: results dict
+    :param mode: either 'localization' or 'classification', case-insensitive
+
+    """
+
+    def draw_brackets():
+        adj = {model: (time + 0.2, acc) for model, [time, acc] in results.items()}
+        adj.pop("X-Net")
+        adj.pop("TSA")
+
+        vertical_endpts = (adj[min(adj, key=lambda key: adj[key][-1])], adj[max(adj, key=lambda key: adj[key][-1])])
+        vertical_endpts = list(zip(*vertical_endpts))
+        vertical_endpts[0] = (vertical_endpts[0][0], vertical_endpts[0][0])  # make sure the line isn't slanted
+
+        horizontal_endpts = [
+            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]), (vertical_endpts[1][0], vertical_endpts[1][0]),
+            "black",
+            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]), (vertical_endpts[1][1], vertical_endpts[1][1]),
+            "black",
+        ]
+
+        plt.plot(*vertical_endpts, "black")
+        plt.plot(*horizontal_endpts)
+
+        return tuple(zip(*vertical_endpts)), tuple(zip(*horizontal_endpts))
+
+    results = {model: stats for model, stats in sorted(results.items(), key=lambda stat: stat[1][1], reverse=True)}
+    times, accuracies = zip(*results.values())
+
+    # plot points
+    color = cm.rainbow(np.linspace(0, 1, len(accuracies)))
+    np.random.seed(1234)
+    np.random.shuffle(color)
+    np.random.seed(None)
+    plt.scatter(times, accuracies, c=color)
+
+    # annotate outliers
+    for model in results:
+        if model == "TSA" or model == "X-Net":
+            plt.annotate(model, (results[model][0] + 0.05, results[model][1] + 0.2), weight="bold", fontsize=13)
+
+    # annotate other points
+    vertical_endpts, horizontal_endpts = draw_brackets()
+
+    middle_models = results.copy()
+    middle_models.pop("TSA")
+    middle_models.pop("X-Net")
+
+    for idx, model in enumerate(middle_models.keys()):
+        if mode.lower() == "classification":
+            plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
+        elif mode.lower() == "localization":
+            plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[1][1] - (idx * 4)), fontsize=10)
+        else:
+            raise ValueError("supported modes are 'classification' and 'localization'")
+
+    # set up grid and plot
+    plt.grid(which="both", linestyle=":")
+
+    plt.title("{} mAP vs. Time".format(mode))
+    plt.xlabel("Time (s)")
+    plt.ylabel("{} mAP (%)".format(mode))
+
+    x1, x2, y1, y2 = plt.axis()
+    plt.axis((x1, x2 + 1, y1, 100))
+
+    plt.show()
+
+
+# ---------------- TESTING ----------------
+if __name__ == "__main__":
+    plot(classification_results, mode="Classification")
+    plot(localization_results, mode="Localization")

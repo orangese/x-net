@@ -6,5 +6,6 @@ __pycache__/
 .idea
 .DS_Store
 
-# Tests
+# Tests and results
 test.py
+results
