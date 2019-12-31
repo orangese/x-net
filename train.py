@@ -18,17 +18,17 @@ from yolo.yolo import YOLO
 DATASET = "/media/ryan/Data/x-ray-datasets/sixray/images/"
 
 DEFAULTS = {
-    "model_path": "/home/ryan/models/sixray/x-net/models/first/final/trained_weights_stage_1.h5",
+    "model_path": "/home/ryan/models/sixray/x-net/models/v1/final/trained_weights_stage_1.h5",
     "anchors_path": "/home/ryan/models/sixray/x-net/anchors/sixray_anchors.txt",
     "classes_path": "/media/ryan/Data/x-ray-datasets/sixray/classes.txt"
 }
 
 TRAIN_CONFIG = {
-    "log_dir": "/home/ryan/models/sixray/x-net/models/first/final_v2/",
+    "log_dir": "/home/ryan/models/sixray/x-net/models/v2/final/",
     "annotation_path": "/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv",
     "val_split": 0.1,
     "epochs": 50,
-    "save_path": "train_weights_v1.h5"
+    "save_path": "trained.h5"
 }
 
 FULL_TRAIN_CONFIG = {
@@ -103,10 +103,10 @@ def train_xnet(dataset=None, defaults=None, train_config=None, callbacks=None, m
 if __name__ == "__main__":
     train_xnet(
         defaults={
-            "model_path": "/home/ryan/models/sixray/x-net/models/first/stage_1_v2/train_weights_v1.h5",
+            "model_path": "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.h5",
         },
         train_config={
-            "log_dir": "/home/ryan/models/sixray/x-net/models/first/final_v2/",
+            "log_dir": "/home/ryan/models/sixray/x-net/models/v2/final/",
             "batch_size": 1,
             "optimizer": keras.optimizers.Adam(learning_rate=1e-3)
         },
