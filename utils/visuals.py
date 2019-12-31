@@ -107,23 +107,23 @@ class Draw:
 
 # RESULTS
 classification_results = {
-    "ResNet101": (0.045, 77.38),
-    "ResNet101 + CHR": (0.05, 79.37),
-    "Inception-v3": (0.07 / 6, 77.01),
-    "Inception-v3 + CHR": (0.07 / 6, 79.49),
-    "YOLOv3": (0.07, 78.70),
+    "ResNet101 [17]": (0.045, 77.38),
+    "ResNet101 + CHR [17]": (0.05, 79.37),
+    "Inception-v3 [17]": (0.07 / 6, 77.01),
+    "Inception-v3 + CHR [17]": (0.07 / 6, 79.49),
+    "YOLOv3 [17]": (0.07, 78.70),
     "X-Net": (0.1, 83.45),
-    "TSA": (5., 30.0)
+    "TSA [5], [12], [16], [21]": (5., 17.5)
 }
 
 localization_results = {
-    "ResNet101": (0.045, 50.10),
-    "ResNet101 + CHR": (0.05, 51.35),
-    "Inception-v3": (0.07 / 6, 62.92),
-    "Inception-v3 + CHR": (0.07 / 6, 63.54),
+    "ResNet101 [17]": (0.045, 50.10),
+    "ResNet101 + CHR [17]": (0.05, 51.35),
+    "Inception-v3 [17]": (0.07 / 6, 62.92),
+    "Inception-v3 + CHR [17]": (0.07 / 6, 63.54),
     "YOLOv3": (0.07, 53.68),
     "X-Net": (0.1, 74.93),
-    "TSA": (5., 30.0)
+    "TSA [5], [12], [16], [21]": (5., 17.5)
 }
 
 
@@ -139,7 +139,7 @@ def plot(results, mode):
     def draw_brackets():
         adj = {model: (time + 0.2, acc) for model, [time, acc] in results.items()}
         adj.pop("X-Net")
-        adj.pop("TSA")
+        adj.pop("TSA [5], [12], [16], [21]")
 
         vertical_endpts = (adj[min(adj, key=lambda key: adj[key][-1])], adj[max(adj, key=lambda key: adj[key][-1])])
         vertical_endpts = list(zip(*vertical_endpts))
@@ -169,14 +169,17 @@ def plot(results, mode):
 
     # annotate outliers
     for model in results:
-        if model == "TSA" or model == "X-Net":
-            plt.annotate(model, (results[model][0] + 0.05, results[model][1] + 0.2), weight="bold", fontsize=13)
+        if "X-Net" in model:
+            plt.annotate(model, (results[model][0] + 0.1, results[model][1] + 0.25), weight="bold", fontsize=13)
+        elif "TSA" in model:
+            plt.annotate("TSA Officer", (results[model][0] - 1.5, results[model][1] + 2.7), weight="bold", fontsize=13)
+            plt.annotate(model.replace("TSA", " "), (results[model][0] - 0.0, results[model][1] + 2.9))
 
     # annotate other points
     vertical_endpts, horizontal_endpts = draw_brackets()
 
     middle_models = results.copy()
-    middle_models.pop("TSA")
+    middle_models.pop("TSA [5], [12], [16], [21]")
     middle_models.pop("X-Net")
 
     for idx, model in enumerate(middle_models.keys()):
@@ -195,7 +198,7 @@ def plot(results, mode):
     plt.ylabel("{} mAP (%)".format(mode))
 
     x1, x2, y1, y2 = plt.axis()
-    plt.axis((x1, x2 + 1, y1, 100))
+    plt.axis((x1, x2 + 2, y1, 100))
 
     plt.show()
 
