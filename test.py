@@ -19,7 +19,7 @@ from yolo.yolo import YOLO
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
     defaults = {
-        "model_path": "/home/ryan/models/sixray/x-net/models/first/stage_1_v2/train_weights_v1.h5", # "/home/ryan/models/sixray/x-net/models/first/final/trained_weights_stage_1.h5",
+        "model_path": "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.h5",
         "anchors_path": "/home/ryan/models/sixray/x-net/anchors/sixray_anchors.txt",
         "classes_path": "/media/ryan/Data/x-ray-datasets/sixray/classes.txt"
     }
