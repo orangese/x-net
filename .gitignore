@@ -5,7 +5,3 @@ __pycache__/
 # PyCharm
 .idea
 .DS_Store
-
-# Tests and results
-test.py
-results
