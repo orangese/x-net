@@ -111,8 +111,8 @@ classification_results = {
     "ResNet101 + CHR [17]": (0.05, 79.37),
     "Inception-v3 [17]": (0.07 / 6, 77.01),
     "Inception-v3 + CHR [17]": (0.07 / 6, 79.49),
-    "YOLOv3 [17]": (0.07, 78.70),
-    "X-Net": (0.1, 83.45),
+    "YOLOv3 *": (0.07, 78.70),
+    "X-Net *": (0.1, 87.38),
     "TSA [5], [12], [16], [21]": (5., 17.5)
 }
 
@@ -121,34 +121,43 @@ localization_results = {
     "ResNet101 + CHR [17]": (0.05, 51.35),
     "Inception-v3 [17]": (0.07 / 6, 62.92),
     "Inception-v3 + CHR [17]": (0.07 / 6, 63.54),
-    "YOLOv3": (0.07, 53.68),
-    "X-Net": (0.1, 74.93),
+    "YOLOv3 *": (0.07, 53.68),
+    "X-Net *": (0.1, 74.93),
     "TSA [5], [12], [16], [21]": (5., 17.5)
 }
 
 
 # PLOT FUNC
-def plot(results, mode):
+def plot(results, mode, save_path=None):
     """Plot results of X-Net vs. TSA vs. other models
 
     :param results: results dict
     :param mode: either 'localization' or 'classification', case-insensitive
+    :param save_path: save path for plot (default: None)
 
     """
 
-    def draw_brackets():
-        adj = {model: (time + 0.2, acc) for model, [time, acc] in results.items()}
-        adj.pop("X-Net")
+    def without_outliers():
+        adj = results.copy()
+
+        adj.pop("X-Net *")
         adj.pop("TSA [5], [12], [16], [21]")
+
+        return adj
+
+    def draw_brackets():
+        adj = {model: (time + 0.2, acc) for model, [time, acc] in without_outliers().items()}
 
         vertical_endpts = (adj[min(adj, key=lambda key: adj[key][-1])], adj[max(adj, key=lambda key: adj[key][-1])])
         vertical_endpts = list(zip(*vertical_endpts))
         vertical_endpts[0] = (vertical_endpts[0][0], vertical_endpts[0][0])  # make sure the line isn't slanted
 
         horizontal_endpts = [
-            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]), (vertical_endpts[1][0], vertical_endpts[1][0]),
+            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]),
+            (vertical_endpts[1][0], vertical_endpts[1][0]),
             "black",
-            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]), (vertical_endpts[1][1], vertical_endpts[1][1]),
+            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]),
+            (vertical_endpts[1][1], vertical_endpts[1][1]),
             "black",
         ]
 
@@ -172,15 +181,13 @@ def plot(results, mode):
         if "X-Net" in model:
             plt.annotate(model, (results[model][0] + 0.1, results[model][1] + 0.25), weight="bold", fontsize=13)
         elif "TSA" in model:
-            plt.annotate("TSA Officer", (results[model][0] - 1.5, results[model][1] + 2.7), weight="bold", fontsize=13)
-            plt.annotate(model.replace("TSA", " "), (results[model][0] - 0.0, results[model][1] + 2.9))
+            plt.annotate("TSA Officer", (results[model][0] - 1.75, results[model][1] + 2.7), weight="bold", fontsize=13)
+            plt.annotate(model.replace("TSA", " "), (results[model][0], results[model][1] + 2.9))
 
     # annotate other points
     vertical_endpts, horizontal_endpts = draw_brackets()
 
-    middle_models = results.copy()
-    middle_models.pop("TSA [5], [12], [16], [21]")
-    middle_models.pop("X-Net")
+    middle_models = without_outliers()
 
     for idx, model in enumerate(middle_models.keys()):
         if mode.lower() == "classification":
@@ -200,10 +207,13 @@ def plot(results, mode):
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2 + 2, y1, 100))
 
+    if save_path:
+        plt.savefig(save_path)
+
     plt.show()
 
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
-    plot(classification_results, mode="Classification")
-    plot(localization_results, mode="Localization")
+    plot(classification_results, mode="Classification", save_path="../results/classification_map.png")
+    plot(localization_results, mode="Localization", save_path="../results/localization_map.png")
