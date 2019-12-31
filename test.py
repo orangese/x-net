@@ -37,12 +37,11 @@ if __name__ == "__main__":
     img_dir_path = "/media/ryan/Data/x-ray-datasets/sixray/images"
     for img_path in os.listdir(img_dir_path):
         if "P" in img_path and img_path.endswith(".jpg") or img_path.endswith(".png"):
-            if "2" in annotations[img_path]:
-                img = cv2.imread(os.path.join(img_dir_path, img_path))
+            img = cv2.imread(os.path.join(img_dir_path, img_path))
 
-                bounding_boxes, scores, classes = net.detect(img)
-                print(annotations[img_path])
+            bounding_boxes, scores, classes = net.detect(img)
 
-                plt.imshow(Draw.draw_on_img(img, bounding_boxes, scores, classes, CLASSES))
-                plt.axis("off")
-                plt.show()
+            plt.imshow(Draw.draw_on_img(img, bounding_boxes, scores, classes, CLASSES))
+            plt.axis("off")
+            plt.annotate(img_path, (0, 0))
+            plt.show()
