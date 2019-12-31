@@ -16,14 +16,17 @@ Used the [SIXray dataset](https://github.com/MeioJane/SIXray).
 
 ### mAP
 
-![Classification Results](results/classification_map.png)
-![Localization Results](results/localization_map.png)
+Classification Results                                     |  Localization Results                                  
+:---------------------------------------------------------:|:-------------------------------------------------------:
+![Classification Results](results/classification_map.png)  |  ![Localization Results](results/localization_map.png)
+
+
+
 
 ### Examples
 
 All correctly detected.
 
-![Knife](results/examples/knife.png)
-![Pliers](results/examples/pliers.png)
-![Scissors](results/examples/scissors.png)
-![Wrench and Pliers](results/examples/wrench_pliers.png)
+![Scissors](results/examples/scissors.png)    |  ![Wrench and Pliers](results/examples/wrench_pliers.png)                                  
+:--------------------------------------------:|:-------------------------------------------------------------:
+![Knife](results/examples/knife.png)          |  ![Pliers](results/examples/pliers.png)
