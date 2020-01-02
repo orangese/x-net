@@ -11,7 +11,7 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 
-from utils.parse import CLASSES, parse_labels, retrieve_annotations, prepare_for_eval
+from utils.parse import CLASSES, retrieve_annotations, prepare_for_eval
 from utils.visuals import Draw
 from yolo.yolo import YOLO
 
