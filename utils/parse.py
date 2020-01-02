@@ -22,6 +22,7 @@ Data must be in the below structure:
 
 import os
 import functools
+import json
 import shutil
 from xml.etree import ElementTree as ET
 
@@ -344,6 +345,25 @@ def prepare_for_eval(net, annotations, labels, dump_paths):
                     prediction_file.write(img_predictions)
 
                 pbar.update()
+
+
+# ---------------- RESULTS ----------------
+
+# JSON PARSE
+def parse_results(filepath):
+    """Parses classification or localization results from a json file
+
+    :param filepath: path to json results file
+    :returns: dict of results
+
+    """
+
+    results = json.load(open(filepath))
+    for model in results:
+        time, acc = results[model].split(", ")
+        results[model] = (float(time), float(acc))
+
+    return results
 
 
 # ---------------- TESTING ----------------

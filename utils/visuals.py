@@ -105,28 +105,6 @@ class Draw:
 
 # ---------------- PLOT RESULTS ----------------
 
-# RESULTS
-classification_results = {
-    "ResNet101 [17]": (0.045, 77.38),
-    "ResNet101 + CHR [17]": (0.05, 79.37),
-    "Inception-v3 [17]": (0.07 / 6, 77.01),
-    "Inception-v3 + CHR [17]": (0.07 / 6, 79.49),
-    "YOLOv3": (0.07, 78.70),
-    "X-Net": (0.1, 87.38),
-    "TSA [5], [12], [16], [21]": (5., 17.5)
-}
-
-localization_results = {
-    "ResNet101 [17]": (0.045, 50.10),
-    "ResNet101 + CHR [17]": (0.05, 51.35),
-    "Inception-v3 [17]": (0.07 / 6, 62.92),
-    "Inception-v3 + CHR [17]": (0.07 / 6, 63.54),
-    "YOLOv3": (0.07, 53.68),
-    "X-Net": (0.1, 74.93),
-    "TSA [5], [12], [16], [21]": (5., 17.5)
-}
-
-
 # PLOT FUNC
 def plot(results, mode, save_path=None):
     """Plot results of X-Net vs. TSA vs. other models
@@ -215,5 +193,8 @@ def plot(results, mode, save_path=None):
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
+    classification_results = parse_results("../results/classification_results.json")
+    localization_results = parse_results("../results/localization_results.json")
+
     plot(classification_results, mode="Classification", save_path="../results/classification_map.png")
     plot(localization_results, mode="Localization", save_path="../results/localization_map.png")
