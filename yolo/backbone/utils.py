@@ -4,8 +4,6 @@
 
 Backbone (darknet or x-net) layers and tools.
 
-Inspired by https://github.com/qqwweee/keras-yolo3.
-
 """
 
 import functools
