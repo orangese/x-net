@@ -41,7 +41,6 @@ if __name__ == "__main__":
 
             bounding_boxes, scores, classes = net.detect(img)
 
-            plt.imshow(Draw.draw_on_img(img, bounding_boxes, scores, classes, CLASSES))
+            plt.imshow(Draw.draw_on_img(img, bounding_boxes, scores, classes, CLASSES, annotation=img_path))
             plt.axis("off")
-            plt.annotate(img_path, (0, 0))
             plt.show()

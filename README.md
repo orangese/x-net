@@ -18,7 +18,7 @@ Used the [SIXray dataset](https://github.com/MeioJane/SIXray).
 
 Classification Results                                     |  Localization Results                                  
 :---------------------------------------------------------:|:-------------------------------------------------------:
-![Classification Results](results/classification_map.png)  |  ![Localization Results](results/localization_map.png)
+![Classification Results](results/plots/classification_map.png)  |  ![Localization Results](results/plots/localization_map.png)
 
 
 
