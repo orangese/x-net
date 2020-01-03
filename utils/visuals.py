@@ -14,6 +14,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.parse import parse_results
 from utils.random import shuffle_with_seed
 
 
@@ -52,14 +53,17 @@ class Draw:
 
 
     # DRAWING
-    def draw(self, bounding_boxes, scores, classes):
+    def draw(self, bounding_boxes, scores, classes, annotation=None):
         """Draws bounding box, score, and prediction on image
 
         :param bounding_boxes: bounding boxes as array
         :param scores: confidence scores as list or array
         :param classes: predicted classes as list or array
+        :param annotation: annotation message to be put in top left corner (default: None)
 
         """
+
+        black = (0, 0, 0)
 
         for bounding_box, score, class_id in zip(bounding_boxes, scores, classes):
             predicted_class = self.classes[class_id]
@@ -72,7 +76,6 @@ class Draw:
 
             color = self.colors[class_id]
             label = '{} {:.2f}'.format(predicted_class, score)
-            black = (0, 0, 0)
 
             cv2.rectangle(self.img, (x_min, y_min), (x_max, y_max), color, self.thickness)
 
@@ -82,10 +85,13 @@ class Draw:
             cv2.rectangle(self.img, (x_min - 1, y_max - 20), (x_min + width + 5, y_max), color, cv2.FILLED)
             cv2.putText(self.img, label, (x_min, y_max - 6), self.font, self.font_size, black, self.font_thickness)
 
+        if annotation:
+            cv2.putText(self.img, annotation, (0, 10), self.font, self.font_size, black, self.font_thickness)
+
 
     # CLASSMETHODS
     @classmethod
-    def draw_on_img(cls, img, bounding_boxes, scores, classes, all_classes):
+    def draw_on_img(cls, img, bounding_boxes, scores, classes, all_classes, annotation=None):
         """Draws on image without creating an instance of Draw
 
         :param img: image to draw on
@@ -93,12 +99,13 @@ class Draw:
         :param scores: confidence scores
         :param classes: predicted classes
         :param all_classes: full class list
+        :param annotation: annotation for img (default: None)
         :returns: drawn-on image
 
         """
 
         drawer = cls(img, all_classes)
-        drawer.draw(bounding_boxes, scores, classes)
+        drawer.draw(bounding_boxes, scores, classes, annotation=annotation)
         return drawer.img
 
 
@@ -124,22 +131,20 @@ def plot(results, mode, save_path=None):
         return adj
 
     def draw_brackets():
-        adj = {model: (time + 0.2, acc) for model, [time, acc] in without_outliers().items()}
+        adj = {model: (time + 0.2, acc) for model, (time, acc) in without_outliers().items()}
 
         vertical_endpts = (adj[min(adj, key=lambda key: adj[key][-1])], adj[max(adj, key=lambda key: adj[key][-1])])
-        vertical_endpts = list(zip(*vertical_endpts))
+        vertical_endpts = list(zip(*vertical_endpts)) + ["black"]
         vertical_endpts[0] = (vertical_endpts[0][0], vertical_endpts[0][0])  # make sure the line isn't slanted
 
+        top, bottom, _ = vertical_endpts
+
         horizontal_endpts = [
-            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]),
-            (vertical_endpts[1][0], vertical_endpts[1][0]),
-            "black",
-            (vertical_endpts[0][0] - 0.075, vertical_endpts[0][1]),
-            (vertical_endpts[1][1], vertical_endpts[1][1]),
-            "black",
+            (top[0] - 0.075, top[1]), (bottom[0], bottom[0]), "black",
+            (top[0] - 0.075, top[1]), (bottom[1], bottom[1]), "black"
         ]
 
-        plt.plot(*vertical_endpts, "black")
+        plt.plot(*vertical_endpts)
         plt.plot(*horizontal_endpts)
 
         return tuple(zip(*vertical_endpts)), tuple(zip(*horizontal_endpts))
@@ -165,9 +170,7 @@ def plot(results, mode, save_path=None):
     # annotate other points
     vertical_endpts, horizontal_endpts = draw_brackets()
 
-    middle_models = without_outliers()
-
-    for idx, model in enumerate(middle_models.keys()):
+    for idx, model in enumerate(without_outliers().keys()):
         if mode.lower() == "classification":
             plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
         elif mode.lower() == "localization":
@@ -193,8 +196,8 @@ def plot(results, mode, save_path=None):
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
-    classification_results = parse_results("../results/classification_results.json")
-    localization_results = parse_results("../results/localization_results.json")
+    classification_results = parse_results("../results/text/classification_results.json")
+    localization_results = parse_results("../results/text/localization_results.json")
 
-    plot(classification_results, mode="Classification", save_path="../results/classification_map.png")
-    plot(localization_results, mode="Localization", save_path="../results/localization_map.png")
+    plot(classification_results, mode="Classification", save_path="../results/plots/classification_map.png")
+    plot(localization_results, mode="Localization", save_path="../results/plots/localization_map.png")
