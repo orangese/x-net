@@ -29,7 +29,6 @@ from xml.etree import ElementTree as ET
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
 import tqdm
 
 
@@ -79,7 +78,7 @@ def parse_annotations(path_to_sixray):
     num_objs = 0
 
     for annotation_file in os.listdir(os.getcwd()):
-        root = ET.parse(os.path.join(os.getcwd(), annotation_file))
+        root = ET.parse(os.path.abspath(annotation_file))
         filename = parse_text(root.findall("./filename")).upper().replace("JPG", "jpg")
 
         annotations[filename] = {}
@@ -183,7 +182,7 @@ def parse_labels(path_to_sixray, sixray_set=10, label_type="train", full_path=Tr
                 split = line.rstrip().split(",")
 
                 img_label = [parse_index(index) for index in split[1:]]
-                img_path = os.path.join(os.getcwd(), split[0] + ".jpg")
+                img_path = os.path.abspath(split[0] + ".jpg")
 
                 if not full_path:
                     img_path = img_path[img_path.rfind("/") + 1:]
