@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from utils.parse import parse_results
-from utils.random import shuffle_with_seed
+from utils.rand import shuffle_with_seed
 
 
 # ---------------- DRAW ----------------
@@ -153,10 +153,7 @@ def plot(results, mode, save_path=None):
     times, accuracies = zip(*results.values())
 
     # plot points
-    color = cm.rainbow(np.linspace(0, 1, len(accuracies)))
-    np.random.seed(1234)
-    np.random.shuffle(color)
-    np.random.seed(None)
+    color = shuffle_with_seed(cm.rainbow(np.linspace(0, 1, len(accuracies))), seed=1234)
     plt.scatter(times, accuracies, c=color)
 
     # annotate outliers
@@ -181,8 +178,8 @@ def plot(results, mode, save_path=None):
     # set up grid and plot
     plt.grid(which="both", linestyle=":")
 
-    plt.title("{} mAP vs. Time".format(mode))
-    plt.xlabel("Time (s)")
+    plt.title("{} mAP vs. Baggage Analysis Time".format(mode))
+    plt.xlabel("Time to analyze an X-ray baggage scan (s)")
     plt.ylabel("{} mAP (%)".format(mode))
 
     x1, x2, y1, y2 = plt.axis()

@@ -376,13 +376,21 @@ if __name__ == "__main__":
         "power": "/media/ryan/Data/x-ray-datasets/sixray",
         "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
     }
-    annotated_imgs = os.getenv("HOME") + "/media/ryan/Data/x-ray-datasets/sixray/images/"
+    annotated_imgs = "/media/ryan/Data/x-ray-datasets/sixray/images/"
 
     # yolo_benchmark_format(
     #     sixray["air"] + "/images/20", annotated_imgs,
     #     annotated_imgs
     #     sixray["air"] + "/annotations.csv"
     # )
+
+    anns = retrieve_annotations(annotated_imgs + "annotations.csv")
+
+    ct = 0
+    for file in anns:
+        for obj in anns[file]:
+             ct += len(obj)
+    print("Total obj ct: {}".format(ct))
 
     show_bounding_boxes(
         annotated_imgs,
