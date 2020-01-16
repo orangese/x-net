@@ -168,21 +168,25 @@ class CudaEngineManager:
         self.engine = self.builder.build_cuda_engine(self.network).serialize()
 
     @timer("uff model parsing time")
-    def parse_uff(self, uff_file, input_name, input_shape, output_name):
+    def parse_uff(self, uff_file, input_names, input_shape, output_names):
         """Parses .uff file and prepares for serialization
 
         :param uff_file: path to uff model
-        :param input_name: name of input
-        :param input_shape: input shape (channels first)
-        :param output_name: name of output
+        :param input_names: names of input as list
+        :param input_shapes: input shape (channels first)
+        :param output_names: names of output
 
         """
 
+        assert not isinstance(input_names, str) and not isinstance(output_names, str), "supply I/O as lists"
+
         parser = trt.UffParser()
 
-        # input shape must always be channels-first
-        parser.register_input(input_name, input_shape)
-        parser.register_output(output_name)
+        for input_name, input_shape in zip(input_names, input_shape):
+            # input shape must always be channels-first
+            parser.register_input(input_name, input_shape)
+        for output_name in output_names:
+            parser.register_output(output_name)
 
         parser.parse(uff_file, self.network, CudaEngineManager.CONSTANTS["dtype"])
 
@@ -363,6 +367,16 @@ class CudaEngine:
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
+    CudaEngineManager().uff_write_cuda_engine(
+        "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.uff",
+        "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.engine",
+        ["input_1"],
+        [(3, 416, 416)],
+        ["yolo_512_conv2d/BiasAdd", "yolo_256_conv2d/BiasAdd", "yolo_128_conv2d/BiasAdd"]
+    )
+
+    raise ValueError()
+
     with tf.Session(graph=tf.Graph()) as sess:
         K.set_learning_phase(0)
 
