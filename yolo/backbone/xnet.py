@@ -37,7 +37,6 @@ def xnet_body(x):
     # stage 5: (n / 16, n / 16, 256) -> (n / 32, n / 32, 1024)
     x_branch_32 = residual_blocks(x_branch_16, 1024, 4, identifier="stage_6")
 
-
     # VERTICAL LAYERS
 
     # third branch: (n / 8, n / 8, 256)
@@ -63,8 +62,10 @@ def xnet_body(x):
 
     branch = residual_blocks(branch, 1024, 1, identifier="final_branch_3_1024")
 
+    # OUTPUT
+
     # output: (n / 8, n / 8, 1024)
-    # gated_output = conv_gate(x_branch_32, branch, kernel_regularizer=keras.regularizers.l2(5e-4))
     gated_output = keras.layers.Add()([x_branch_32, branch])
+    # gated_output = conv_gate(x_branch_32, branch, kernel_regularizer=keras.regularizers.l2(5e-4))
 
     return gated_output
