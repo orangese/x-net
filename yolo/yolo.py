@@ -39,12 +39,13 @@ class YOLO:
     def __init__(self, model_path, anchors_path, classes_path, backbone="x-net", sess=None, **kwargs):
         """Initializes YOLO object
 
-        :param model_path: path to YOLO weights
+        :param model_path: path to YOLO weights (.h5 weights or .pb frozen graph supported)
         :param anchors_path: path to YOLO anchors
         :param classes_path: path to YOLO classes
         :param backbone: backbone type, see YOLO.BACKBONES (default: 'x-net')
         :param sess: tensorflow Session (default: None)
         :param kwargs: overrides YOLO.HYPERPARAMETERS
+        :raise: ValueError if model is not supported
 
         """
 
@@ -77,13 +78,36 @@ class YOLO:
             self.classes = [cls.strip() for cls in classes_file]
 
     def model_init(self):
-        """Initializes YOLO graph"""
-        assert self.model_path.endswith(".h5"), "only keras .h5 files supported"
-        assert self.backbone in self.BACKBONES, "supported backbones are {}".format(self.BACKBONES)
+        """Initializes YOLO graph
 
-        inputs = keras.layers.Input((*self.HYPERPARAMS["img_size"], 3))
-        self.yolo = yolo(inputs, len(self.anchors) // 3, len(self.classes), backbone_type=self.backbone)
-        self.yolo.load_weights(self.model_path, by_name=True, skip_mismatch=True)
+        :raise: ValueError, AssertionError: if model is not supported
+
+        """
+
+        if self.model_path.endswith(".h5"):
+            assert self.backbone in self.BACKBONES, "supported backbones are {}".format(self.BACKBONES)
+
+            inputs = keras.layers.Input((*self.HYPERPARAMS["img_size"], 3))
+
+            self.yolo = yolo(inputs, len(self.anchors) // 3, len(self.classes), backbone_type=self.backbone)
+            self.yolo.load_weights(self.model_path, by_name=True, skip_mismatch=True)
+
+        elif self.model_path.endswith(".pb"):
+            with self.sess:
+                with tf.gfile.FastGFile(self.model_path, "rb") as graph_file:
+                    graph_def = tf.GraphDef()
+                    graph_def.ParseFromString(graph_file.read())
+
+                    tf.import_graph_def(graph_def, name="")
+
+                self.yolo = self.sess.graph
+
+                raise NotImplementedError("didn't finish .pb implementation")
+                # TODO: finish by making self.yolo_output the appropriate tensor
+
+        else:
+            raise ValueError("{} not a supported model".format(self.model_path))
+
         print("{} loaded".format(self.model_path))
 
         self.img_size_tensor = K.placeholder(shape=(2,))
