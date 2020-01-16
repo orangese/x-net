@@ -17,6 +17,13 @@ from utils.visuals import Draw
 from yolo.yolo import YOLO
 
 
+# ---------------- CONFIG ----------------
+DEFAULTS = {
+    "model_path": "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.h5",
+    "anchors_path": "/home/ryan/models/sixray/x-net/anchors/sixray_anchors.txt",
+    "classes_path": "/media/ryan/Data/x-ray-datasets/sixray/classes.txt"
+}
+
 # ---------------- DEMONSTRATION ----------------
 def test(net, path_to_sixray, num_imgs=None, display=True):
     times = []
@@ -43,13 +50,7 @@ def test(net, path_to_sixray, num_imgs=None, display=True):
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
-    defaults = {
-        "model_path": "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.h5",
-        "anchors_path": "/home/ryan/models/sixray/x-net/anchors/sixray_anchors.txt",
-        "classes_path": "/media/ryan/Data/x-ray-datasets/sixray/classes.txt"
-    }
-
-    net = YOLO(**defaults)
+    net = YOLO(**DEFAULTS)
     annotations = retrieve_annotations("/media/ryan/Data/x-ray-datasets/sixray/images/annotations.csv")
     path_to_sixray = "/media/ryan/Data/x-ray-datasets/sixray/images"
 
