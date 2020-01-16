@@ -12,7 +12,7 @@ from PIL import Image
 import numpy as np
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
-from utils.random import rand
+from utils.rand import random as rand
 from utils.parse import CLASSES
 from yolo.head.backend import preprocess_true_boxes
 

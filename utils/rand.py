@@ -1,6 +1,6 @@
 """
 
-"utils/random.py"
+"utils/rand.py"
 
 Miscellaneous utils.
 
@@ -14,7 +14,7 @@ SEED = 10101
 
 
 # ---------------- RANDOM FUNCTIONS ----------------
-def rand(a=0, b=1):
+def random(a=0, b=1):
     """Random number from range
 
     :param a: min

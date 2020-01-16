@@ -13,7 +13,7 @@ import numpy as np
 import tensorflow as tf
 
 from utils.datagen import data_generator
-from utils.random import shuffle_with_seed
+from utils.rand import shuffle_with_seed
 from yolo.head.backend import yolo_eval, yolo_loss
 from yolo.head.join import yolo
 

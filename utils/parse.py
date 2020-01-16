@@ -45,6 +45,7 @@ def restore_cwd(func):
     :param func: function
 
     """
+    
     @functools.wraps(func)
     def _func(*args, **kwargs):
         cwd = os.getcwd()
