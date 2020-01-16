@@ -31,29 +31,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
 
+from utils.decorators import restore_cwd
+
 
 # ---------------- HELPERS AND SETUP ----------------
 
 # CONSTANTS
 CLASSES = ["gun", "knife", "wrench", "pliers", "scissors"]
-
-
-# DECORATORS
-def restore_cwd(func):
-    """Decorator to restore `os.getcwd()` in functions that use `os.chdir`
-
-    :param func: function
-
-    """
-    
-    @functools.wraps(func)
-    def _func(*args, **kwargs):
-        cwd = os.getcwd()
-        result = func(*args, **kwargs)
-        os.chdir(cwd)
-        return result
-
-    return _func
 
 
 # ---------------- DATA PARSING ----------------

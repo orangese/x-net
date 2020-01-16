@@ -6,10 +6,10 @@ Backbone (darknet or x-net) layers and tools.
 
 """
 
-import functools
-
 import keras
 from keras import backend as K
+
+from utils.decorators import add_config
 
 
 # ---------------- SETUP ----------------
@@ -47,29 +47,8 @@ def get_config(key):
         raise KeyError("{} not found. Available configs are {}".format(key, list(CONFIGS.keys())))
 
 
-# DECORATORS
-def add_config(config_name, wraps=None):
-    """Decorator that adds custom configuration to layer
-
-    :param config_name: name of config dictionary (contained in CONFIGS)
-    :param wraps: function to wrap
-
-    """
-
-    def _add_config(func):
-        @functools.wraps(func if wraps is None else wraps)
-        def _func(*args, **kwargs):
-            config = get_config(config_name)
-            config.update(kwargs)
-            return func(*args, **config)
-
-        return _func
-
-    return _add_config
-
-
 # ---------------- WRAPPER LAYERS ----------------
-@add_config("darknet_conv", wraps=keras.layers.Conv2D)
+@add_config("darknet_conv", get_config=get_config, wraps=keras.layers.Conv2D)
 def DarknetConv2D(identifier, *args, **kwargs):
     """Conv2D class wrapper with Darknet parameters. See CONFIGS for more information
 
@@ -83,7 +62,7 @@ def DarknetConv2D(identifier, *args, **kwargs):
     return keras.layers.Conv2D(*args, name="{}_conv2d".format(identifier), **kwargs)
 
 
-@add_config("darknet_conv_transpose", wraps=keras.layers.Conv2DTranspose)
+@add_config("darknet_conv_transpose", get_config=get_config, wraps=keras.layers.Conv2DTranspose)
 def DarknetConv2DTranspose(identifier, *args, **kwargs):
     """Conv2DTranspose class wrapper with Darknet parameters. See CONFIGS for more information
 
@@ -109,7 +88,7 @@ def conv_bn_leaky(x, identifier, *args, **kwargs):
 
     """
 
-    @add_config("conv_bn_leaky", wraps=DarknetConv2D)
+    @add_config("conv_bn_leaky", get_config=get_config, wraps=DarknetConv2D)
     def LeakyConv2D(identifier, *args, **kwargs):
         return DarknetConv2D(identifier, *args, **kwargs)
 
@@ -131,7 +110,7 @@ def conv_transpose_bn_leaky(x, identifier, *args, **kwargs):
 
     """
 
-    @add_config("conv_bn_leaky", wraps=DarknetConv2DTranspose)
+    @add_config("conv_bn_leaky", get_config=get_config, wraps=DarknetConv2DTranspose)
     def LeakyConv2DTranspose(identifier, *args, **kwargs):
         return DarknetConv2DTranspose(identifier, *args, **kwargs)
 
