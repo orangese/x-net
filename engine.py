@@ -4,7 +4,7 @@
 
 CUDA engine and TensorFlow graph management.
 
-Sources (they written by me as well):
+Sources (all written by me):
 1. https://github.com/orangese/aisecurity/blob/tensorrt/aisecurity/optim/engine.py
 2. https://github.com/orangese/aisecurity/blob/tensorrt/aisecurity/data/graphs.py
 
@@ -17,12 +17,11 @@ import pycuda.autoinit
 import pycuda.driver as cuda
 import numpy as np
 import tensorflow as tf
+import tensorflow.contrib.tensorrt as tftrt
 from tensorflow.python.framework import graph_io
 import tensorrt as trt
 
-from main import DEFAULTS
 from utils.decorators import timer
-from yolo.yolo import YOLO
 
 
 # ---------------- TENSORFLOW GRAPH MANAGEMENT ----------------
@@ -54,6 +53,28 @@ def freeze_keras_model(model, sess, save_dir=os.getcwd(), save_name="frozen_grap
     frozen_graph = _freeze_graph(sess.graph, sess, output_names, save_dir, save_name)
 
     return frozen_graph, (input_names, output_names)
+
+
+# frozen .pb -> trt-optimizer .pb
+@timer("Inference graph creation time")
+def optimize_graph(path_to_graph_def, output_names, save_dir=".", save_name="trt_graph.pb"):
+    with tf.gfile.FastGFile(path_to_graph_def, "rb") as graph_file:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(graph_file.read())
+
+        trt_graph = tftrt.create_inference_graph(
+            input_graph_def=graph_def,
+            outputs=output_names,
+            max_batch_size=1,
+            max_workspace_size_bytes=1 << 25,
+            precision_mode="FP16",
+            minimum_segment_size=50
+        )
+
+        if save_dir:
+            graph_io.write_graph(trt_graph, save_dir, save_name, as_text=False)
+
+        return trt_graph
 
 
 # ---------------- CUDA ENGINE MANAGEMENT ----------------
@@ -168,7 +189,7 @@ class CudaEngineManager:
         self.engine = self.builder.build_cuda_engine(self.network).serialize()
 
     @timer("uff model parsing time")
-    def parse_uff(self, uff_file, input_names, input_shape, output_names):
+    def parse_uff(self, uff_file, input_names, input_shapes, output_names):
         """Parses .uff file and prepares for serialization
 
         :param uff_file: path to uff model
@@ -182,9 +203,9 @@ class CudaEngineManager:
 
         parser = trt.UffParser()
 
-        for input_name, input_shape in zip(input_names, input_shape):
+        for input_name, input_shape in zip(input_names, input_shapes):
             # input shape must always be channels-first
-            parser.register_input(input_name, input_shape)
+            parser.register_input(input_name, input_shapes)
         for output_name in output_names:
             parser.register_output(output_name)
 
@@ -367,21 +388,22 @@ class CudaEngine:
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
-    CudaEngineManager().uff_write_cuda_engine(
-        "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.uff",
-        "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.engine",
-        ["input_1"],
-        [(3, 416, 416)],
-        ["yolo_512_conv2d/BiasAdd", "yolo_256_conv2d/BiasAdd", "yolo_128_conv2d/BiasAdd"]
+    # CudaEngineManager().uff_write_cuda_engine(
+    #     "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.uff",
+    #     "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.engine",
+    #     ["input_1"],
+    #     [(3, 416, 416)],
+    #     ["yolo_512_conv2d/BiasAdd", "yolo_256_conv2d/BiasAdd", "yolo_128_conv2d/BiasAdd"]
+    # )
+    #
+    # raise ValueError()
+
+    K.set_learning_phase(0)
+    K.clear_session()
+
+    optimize_graph(
+        "/home/ryan/models/sixray/x-net/models/v2/stage_1/trained.pb",
+        ["yolo_512_conv2d/BiasAdd", "yolo_256_conv2d/BiasAdd", "yolo_128_conv2d/BiasAdd"],
+        save_dir="/home/ryan/models/sixray/x-net/models/v2/stage_1/",
+        save_name="trained_optim.pb"
     )
-
-    raise ValueError()
-
-    with tf.Session(graph=tf.Graph()) as sess:
-        K.set_learning_phase(0)
-
-        net = YOLO(**DEFAULTS)
-        freeze_keras_model(
-            net.yolo, sess, save_dir="/home/ryan/models/sixray/x-net/models/v2/stage_1/",
-            save_name="trained.pb"
-        )
