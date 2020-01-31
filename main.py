@@ -41,7 +41,7 @@ def test(net, path_to_sixray, num_imgs=None, display=True):
                 plt.axis("off")
                 plt.show()
 
-            if num_imgs and len(times) > num_imgs:
+            if num_imgs and len(times) >= num_imgs:
                 break
 
     print("Average time (s): {}".format(sum(times) / len(times)))
