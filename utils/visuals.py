@@ -171,7 +171,7 @@ def plot(results, mode, save_path=None, with_citations=False):
     vertical_endpts, horizontal_endpts = draw_brackets()
 
     for idx, model in enumerate(without_outliers().keys()):
-        if not with_citations:
+        if not with_citations and " " in model:
             model = model[:model.find(" ")]
         if mode.lower() == "classification":
             plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
