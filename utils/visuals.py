@@ -75,12 +75,11 @@ class Draw:
             x_max = min(self.img.shape[0], int(x_max.item() + 0.5))
 
             color = self.colors[class_id]
-            label = '{} {:.2f}'.format(predicted_class, score)
+            label = "{} {:.2f}".format(predicted_class, score)
 
             cv2.rectangle(self.img, (x_min, y_min), (x_max, y_max), color, self.thickness)
 
-            text_size, _ = cv2.getTextSize(label, self.font, self.font_size, self.font_thickness)
-            width, height = text_size
+            (width, height), _ = cv2.getTextSize(label, self.font, self.font_size, self.font_thickness)
 
             cv2.rectangle(self.img, (x_min - 1, y_max - 20), (x_min + width + 5, y_max), color, cv2.FILLED)
             cv2.putText(self.img, label, (x_min, y_max - 6), self.font, self.font_size, black, self.font_thickness)
@@ -113,12 +112,13 @@ class Draw:
 # ---------------- PLOT RESULTS ----------------
 
 # PLOT FUNC
-def plot(results, mode, save_path=None):
+def plot(results, mode, save_path=None, with_citations=False):
     """Plot results of X-Net vs. TSA vs. other models
 
     :param results: results dict
     :param mode: either 'localization' or 'classification', case-insensitive
     :param save_path: save path for plot (default: None)
+    :param with_citations: include citations in plot or not (default: False)
 
     """
 
@@ -137,11 +137,11 @@ def plot(results, mode, save_path=None):
         vertical_endpts = list(zip(*vertical_endpts)) + ["black"]
         vertical_endpts[0] = (vertical_endpts[0][0], vertical_endpts[0][0])  # make sure the line isn't slanted
 
-        top, bottom, _ = vertical_endpts
+        (x_top, y_top), (x_bottom, y_bottom), _ = vertical_endpts
 
         horizontal_endpts = [
-            (top[0] - 0.075, top[1]), (bottom[0], bottom[0]), "black",
-            (top[0] - 0.075, top[1]), (bottom[1], bottom[1]), "black"
+            (x_top - 0.075, y_top), (x_bottom, x_bottom), "black",
+            (x_top - 0.075, y_top), (y_bottom, y_bottom), "black"
         ]
 
         plt.plot(*vertical_endpts)
@@ -161,13 +161,18 @@ def plot(results, mode, save_path=None):
         if "X-Net" in model:
             plt.annotate(model, (results[model][0] + 0.1, results[model][1] + 0.25), weight="bold", fontsize=13)
         elif "TSA" in model:
-            plt.annotate("TSA Officer", (results[model][0] - 1.75, results[model][1] + 2.7), weight="bold", fontsize=13)
-            plt.annotate(model.replace("TSA", " "), (results[model][0], results[model][1] + 2.9))
+            if with_citations:
+                plt.annotate("TSA Officer", (results[model][0] - 1.75, results[model][1] + 2.7), weight="bold", fontsize=13)
+                plt.annotate(model.replace("TSA", " "), (results[model][0], results[model][1] + 2.9))
+            else:
+                plt.annotate("TSA Officer", (results[model][0] - 0.875, results[model][1] + 2.7), weight="bold", fontsize=13)
 
     # annotate other points
     vertical_endpts, horizontal_endpts = draw_brackets()
 
     for idx, model in enumerate(without_outliers().keys()):
+        if not with_citations:
+            model = model[:model.find(" ")]
         if mode.lower() == "classification":
             plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
         elif mode.lower() == "localization":
