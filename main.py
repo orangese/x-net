@@ -177,4 +177,3 @@ if __name__ == "__main__":
 
     # net = YOLO(**DEFAULTS)
     # test(net, imgs, write_to="results/examples/detection.txt")
-e
