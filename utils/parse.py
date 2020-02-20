@@ -333,8 +333,8 @@ def prepare_for_eval(net, annotations, labels, dump_paths):
 
 # ---------------- RESULTS ----------------
 
-# JSON PARSE
-def parse_results(filepath):
+# PARSE MODEL EVAL
+def parse_model_results(filepath):
     """Parses classification or localization results from a json file
 
     :param filepath: path to json results file

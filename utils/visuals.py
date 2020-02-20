@@ -14,7 +14,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.parse import parse_results
+from utils.parse import parse_model_results, CLASSES
 from utils.rand import shuffle_with_seed
 
 
@@ -31,7 +31,7 @@ class Draw:
 
         """
 
-        self.img = img
+        self.img = np.copy(img)
         self.classes = classes
 
         self.color_init()
@@ -90,14 +90,14 @@ class Draw:
 
     # CLASSMETHODS
     @classmethod
-    def draw_on_img(cls, img, bounding_boxes, scores, classes, all_classes, annotation=None):
+    def draw_on_img(cls, img, bounding_boxes, scores, classes, all_classes=CLASSES, annotation=None):
         """Draws on image without creating an instance of Draw
 
         :param img: image to draw on
         :param bounding_boxes: bounding boxes for image
         :param scores: confidence scores
         :param classes: predicted classes
-        :param all_classes: full class list
+        :param all_classes: full class list (default: utils.visuals.CLASSES)
         :param annotation: annotation for img (default: None)
         :returns: drawn-on image
 
@@ -198,8 +198,8 @@ def plot(results, mode, save_path=None, with_citations=False):
 
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
-    classification_results = parse_results("../results/text/classification_results.json")
-    localization_results = parse_results("../results/text/localization_results.json")
+    classification_results = parse_model_results("../results/text/classification_results.json")
+    localization_results = parse_model_results("../results/text/localization_results.json")
 
     plot(classification_results, mode="Classification", save_path="../results/plots/classification_map.png")
     plot(localization_results, mode="Localization", save_path="../results/plots/localization_map.png")
