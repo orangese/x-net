@@ -1,0 +1,60 @@
+{
+    "/media/ryan/Data/x-ray-datasets/sixray/images/P03879.jpg": [
+        {
+            "id": 1,
+            "score": 0.9376052021980286,
+            "box": [
+                230.0,
+                167.0,
+                262.0,
+                228.0
+            ]
+        }
+    ],
+    "/media/ryan/Data/x-ray-datasets/sixray/images/P06792.jpg": [
+        {
+            "id": 3,
+            "score": 0.7351047992706299,
+            "box": [
+                165.0,
+                187.0,
+                244.0,
+                237.0
+            ]
+        }
+    ],
+    "/media/ryan/Data/x-ray-datasets/sixray/images/P08109.jpg": [
+        {
+            "id": 4,
+            "score": 0.5375851988792419,
+            "box": [
+                118.0,
+                224.0,
+                193.0,
+                246.0
+            ]
+        }
+    ],
+    "/media/ryan/Data/x-ray-datasets/sixray/images/P06241.jpg": [
+        {
+            "id": 2,
+            "score": 0.3510373830795288,
+            "box": [
+                174.0,
+                130.0,
+                265.0,
+                208.0
+            ]
+        },
+        {
+            "id": 3,
+            "score": 0.5287375450134277,
+            "box": [
+                226.0,
+                346.0,
+                295.0,
+                398.0
+            ]
+        }
+    ]
+}
