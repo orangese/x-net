@@ -175,5 +175,6 @@ if __name__ == "__main__":
     detections = "results/examples/detection.txt"
     slideshow(imgs, detections, sec_per_img=1)
 
-    # net = YOLO(**DEFAULTS)
+    net = YOLO(**DEFAULTS)
+    # test_on_img(net, os.path.join(path_to_sixray, "P08794.jpg"))
     # test(net, imgs, write_to="results/examples/detection.txt")
