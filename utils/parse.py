@@ -247,28 +247,33 @@ def resize_imgs(img_dir, annotations, target_shape=(416, 416), annotation_file="
 
 
 # ---------------- DATA VISUALIZATION ----------------
-def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0)):
+def show_bounding_boxes(img_dir, annotations, color=(255, 0, 0), filter_fn=lambda f: True):
     """Shows bounding boxes on annotated data.
 
     :param img_dir: name of directory of images through which to iterate + display
     :param annotations: annotation set
+    :param color: color of bounding box in RGB (default: red (255, 0, 0))
+    :param filter_fn: filter to apply to images in img_dir
+
     """
 
     for img_name in os.listdir(img_dir):
-        img = cv2.imread(os.path.join(img_dir, img_name))
-        img_name = img_name.upper().replace("JPG", "jpg")
+        if filter_fn is None or filter_fn(img_name):
+            img = cv2.imread(os.path.join(img_dir, img_name))
+            img_name = img_name.upper().replace("JPG", "jpg")
 
-        for obj in annotations[img_name]:
-            for bounding_box in annotations[img_name][obj]:
-                x_min, y_min, x_max, y_max = bounding_box
-                cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
+            for obj in annotations[img_name]:
+                for bounding_box in annotations[img_name][obj]:
+                    x_min, y_min, x_max, y_max = bounding_box
+                    cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color, thickness=2)
+                    cv2.putText(img, img_name, (0, 10), cv2.FONT_HERSHEY_DUPLEX, 0.3, (0, 0, 0), 1)
 
-        plt.gcf().canvas.set_window_title("SIXray visualization")
+            plt.gcf().canvas.set_window_title("SIXray visualization")
 
-        plt.imshow(img, cmap="gray")
-        plt.axis("off")
+            plt.imshow(img)
+            plt.axis("off")
 
-        plt.show()
+            plt.show()
 
 
 # ---------------- DATA PREPARATIONS ----------------
@@ -278,7 +283,7 @@ def prepare_for_eval(net, annotations, labels, dump_paths):
     :param net: YOLO net object
     :param annotations: annotations dict
     :param labels: labels dict (full_path=True)
-    :param dump_paths: [truth dumping path, annotation dumping path]. Each can be None
+    :param dump_paths: [truth dumping path, annotation dumping path]. Either can be None
 
     """
 
@@ -357,17 +362,7 @@ if __name__ == "__main__":
         copy(src, dest)
         resize_imgs(dest, retrieve_annotations(src_annotations))
 
-    sixray = {
-        "power": "/media/ryan/Data/x-ray-datasets/sixray",
-        "air": "/Users/ryan/Documents/Coding/Datasets/SIXray"
-    }
     annotated_imgs = "/media/ryan/Data/x-ray-datasets/sixray/images/"
-
-    # yolo_benchmark_format(
-    #     sixray["air"] + "/images/20", annotated_imgs,
-    #     annotated_imgs
-    #     sixray["air"] + "/annotations.csv"
-    # )
 
     anns = retrieve_annotations(annotated_imgs + "annotations.csv")
 
@@ -377,9 +372,10 @@ if __name__ == "__main__":
              ct += len(obj)
     print("Total obj ct: {}".format(ct))
 
+    false_positive = ['P03585.jpg', 'P08758.jpg', 'P04435.jpg', 'P08701.jpg', 'P08833.jpg', 'P08902.jpg', 'P08888.jpg', 'P00673.jpg', 'P07425.jpg', 'P03862.jpg', 'P04107.jpg', 'P08008.jpg', 'P08893.jpg', 'P08025.jpg', 'P02574.jpg', 'P05605.jpg', 'P05528.jpg', 'P05325.jpg', 'P06240.jpg', 'P08466.jpg', 'P07701.jpg', 'P05286.jpg', 'P06239.jpg', 'P08882.jpg', 'P08670.jpg', 'P04504.jpg', 'P08884.jpg', 'P06838.jpg', 'P05493.jpg', 'P08758.jpg', 'P07586.jpg', 'P06409.jpg', 'P08135.jpg', 'P08851.jpg', 'P07687.jpg', 'P07855.jpg', 'P04774.jpg', 'P08857.jpg', 'P08132.jpg', 'P07585.jpg', 'P04578.jpg', 'P07526.jpg', 'P00763.jpg', 'P07219.jpg', 'P04039.jpg', 'P07217.jpg', 'P01920.jpg', 'P06141.jpg', 'P07673.jpg', 'P08788.jpg', 'P06240.jpg', 'P08296.jpg', 'P03470.jpg', 'P08219.jpg', 'P08857.jpg', 'P04361.jpg', 'P08908.jpg', 'P08559.jpg', 'P06156.jpg', 'P00276.jpg', 'P06725.jpg', 'P07218.jpg']
+
     show_bounding_boxes(
         annotated_imgs,
-        retrieve_annotations(annotated_imgs + "/annotations.csv")
-        # sixray["air"] + "/images/20",
-        # retrieve_annotations(sixray["air"] + "/annotations.csv")
+        retrieve_annotations(annotated_imgs + "/annotations.csv"),
+        filter_fn=lambda f: f in false_positive
     )
