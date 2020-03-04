@@ -118,6 +118,40 @@ def retrieve_annotations(filename):
     return annotations
 
 
+def filter_by_class(annotations, class_id):
+    """Retrieves all files that have a specific class_id
+
+    :param annotations: annotations dict
+    :param class_id: id of class
+    :returns: list of files containing specified class
+
+    """
+
+    results = []
+    for file in annotations:
+        if str(class_id) in annotations[file]:
+            results.append(file)
+
+    return results
+
+
+def sort_by_class(annotations):
+    """Sorts files in annotations by class id
+
+    :param annotations: annotations dict
+    :returns: dict mapping class id to list of files containing that class
+
+    """
+
+    sorted_files = {}
+    for class_id in CLASSES:
+        results = filter_by_class(annotations, CLASSES.index(class_id))
+        sorted_files[class_id] = results
+        print("Found {} files with '{}'".format(len(results), class_id))
+
+    return sorted_files
+
+
 def write_annotations(annotations, filename):
     """Writes annotations to filename
 
