@@ -149,11 +149,17 @@ def plot(results, mode, save_path=None, with_citations=False):
 
         return tuple(zip(*vertical_endpts)), tuple(zip(*horizontal_endpts))
 
+    # font setup
+    from matplotlib import font_manager
+    font_manager._rebuild()
+
+    plt.rcParams["font.family"] = "Open Sans"
+
     results = {model: stats for model, stats in sorted(results.items(), key=lambda stat: stat[1][1], reverse=True)}
     times, accuracies = zip(*results.values())
 
     # plot points
-    color = shuffle_with_seed(cm.rainbow(np.linspace(0, 1, len(accuracies))), seed=1234)
+    color = shuffle_with_seed(cm.rainbow(np.linspace(0, 1, len(accuracies))), seed=12324)
     plt.scatter(times, accuracies, c=color)
 
     # annotate outliers
@@ -173,25 +179,31 @@ def plot(results, mode, save_path=None, with_citations=False):
     for idx, model in enumerate(without_outliers().keys()):
         if not with_citations and " " in model:
             model = model[:model.find(" ")]
-        if mode.lower() == "classification":
+        if mode == "classification":
             plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
-        elif mode.lower() == "localization":
+        elif mode == "localization":
             plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[1][1] - (idx * 4)), fontsize=10)
         else:
             raise ValueError("supported modes are 'classification' and 'localization'")
 
     # set up grid and plot
-    plt.grid(which="both", linestyle=":")
+    plt.grid(which="major", linestyle=":")
 
-    plt.title("{} mAP vs. Baggage Analysis Time".format(mode))
+    apa_citation = "$\it{Figure}$ " + ("1" if mode == "classification" else "2")
+
+    plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()))
     plt.xlabel("Time to analyze an X-ray baggage scan (s)")
-    plt.ylabel("{} mAP (%)".format(mode))
+    plt.ylabel("{} mAP (%)".format(mode.title()))
 
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2 + 2, y1, 100))
 
+    fig = plt.gcf()
+    x, y = fig.get_size_inches()
+    fig.set_size_inches(x, y / 1.2)
+
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path, dpi=500, bbox_inches="tight")
 
     plt.show()
 
@@ -201,5 +213,5 @@ if __name__ == "__main__":
     classification_results = parse_model_results("../results/text/classification_results.json")
     localization_results = parse_model_results("../results/text/localization_results.json")
 
-    plot(classification_results, mode="Classification", save_path="../results/plots/classification_map.png")
-    plot(localization_results, mode="Localization", save_path="../results/plots/localization_map.png")
+    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg")
+    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg")
