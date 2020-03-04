@@ -11,6 +11,7 @@ import colorsys
 
 import cv2
 import matplotlib.cm as cm
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -112,13 +113,14 @@ class Draw:
 # ---------------- PLOT RESULTS ----------------
 
 # PLOT FUNC
-def plot(results, mode, save_path=None, with_citations=False):
+def plot(results, mode, save_path=None, with_citations=False, font=None):
     """Plot results of X-Net vs. TSA vs. other models
 
     :param results: results dict
     :param mode: either 'localization' or 'classification', case-insensitive
     :param save_path: save path for plot (default: None)
     :param with_citations: include citations in plot or not (default: False)
+    :param: font (default: None)
 
     """
 
@@ -150,10 +152,9 @@ def plot(results, mode, save_path=None, with_citations=False):
         return tuple(zip(*vertical_endpts)), tuple(zip(*horizontal_endpts))
 
     # font setup
-    from matplotlib import font_manager
-    font_manager._rebuild()
-
-    plt.rcParams["font.family"] = "Open Sans"
+    if font:
+        font_manager._rebuild()
+        plt.rcParams["font.family"] = font
 
     results = {model: stats for model, stats in sorted(results.items(), key=lambda stat: stat[1][1], reverse=True)}
     times, accuracies = zip(*results.values())
@@ -213,5 +214,5 @@ if __name__ == "__main__":
     classification_results = parse_model_results("../results/text/classification_results.json")
     localization_results = parse_model_results("../results/text/localization_results.json")
 
-    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg")
-    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg")
+    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg", font="Product Sans")
+    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg", font="Product Sans")

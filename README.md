@@ -2,7 +2,7 @@
 
 A deep convolutional neural model for X-ray threat detection.
 
-__Reuses some code from and is heavily inspired by https://github.com/qqwweee/keras-yolo3.__
+__Reuses some code from and is inspired by https://github.com/qqwweee/keras-yolo3.__
 
 ## About
 
@@ -18,10 +18,7 @@ Used the [SIXray dataset](https://github.com/MeioJane/SIXray).
 
 Classification Results                                     |  Localization Results                                  
 :---------------------------------------------------------:|:-------------------------------------------------------:
-![Classification Results](results/plots/classification_map.png)  |  ![Localization Results](results/plots/localization_map.png)
-
-
-
+![Classification Results](results/plots/classification_map.jpg)  |  ![Localization Results](results/plots/localization_map.jpg)
 
 ### Examples
 
