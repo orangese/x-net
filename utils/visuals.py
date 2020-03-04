@@ -192,7 +192,7 @@ def plot(results, mode, save_path=None, with_citations=False):
     apa_citation = "$\it{Figure}$ " + ("1" if mode == "classification" else "2")
 
     plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()))
-    plt.xlabel("Time to analyze an X-ray baggage scan (s)")
+    plt.xlabel("Time to analyze an X-ray baggage scan (sec)")
     plt.ylabel("{} mAP (%)".format(mode.title()))
 
     x1, x2, y1, y2 = plt.axis()
