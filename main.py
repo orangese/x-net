@@ -15,7 +15,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.parse import CLASSES
+from utils.parse import CLASSES, retrieve_annotations, sort_by_class
 from utils.visuals import Draw
 from yolo.yolo import YOLO
 
@@ -163,18 +163,20 @@ def slideshow(imgs, path_to_detections, sec_per_img=1):
 # ---------------- TESTING ----------------
 if __name__ == "__main__":
     if "/home/ryan" in os.path.expanduser("~"):
-        path_to_sixray = "/media/ryan/Data/x-ray-datasets/sixray/images"
+        path_to_sixray = "/media/ryan/Data/x-ray-datasets/sixray/images/"
     elif "/Users/ryan" in os.path.expanduser("~"):
-        path_to_sixray = "/Users/ryan/data/sixray"
+        path_to_sixray = "/Users/ryan/data/sixray/"
     else:
         raise ValueError("cannot run tests on this computer")
+
+    annotations = retrieve_annotations(path_to_sixray.replace("images/", "") + "annotations.csv")
+    sorted_imgs = sort_by_class(annotations)
 
     imgs = ["P03879.jpg", "P06792.jpg", "P08109.jpg", "P06241.jpg"]
     imgs = [os.path.join(path_to_sixray, img) for img in imgs]
 
     detections = "results/examples/detection.txt"
-    slideshow(imgs, detections, sec_per_img=1)
+    # slideshow(imgs, detections, sec_per_img=1)
 
     net = YOLO(**DEFAULTS)
-    # test_on_img(net, os.path.join(path_to_sixray, "P08794.jpg"))
-    # test(net, imgs, write_to="results/examples/detection.txt")
+    test(net, sorted_imgs["gun"], display=False, write_to="results/examples/detection.txt")
