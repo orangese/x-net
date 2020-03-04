@@ -178,7 +178,7 @@ def plot(results, mode, save_path=None, with_citations=False):
 
     for idx, model in enumerate(without_outliers().keys()):
         if not with_citations and " " in model:
-            model = model[:model.find(" ")]
+            model = model[:model.find("[") - 1]
         if mode == "classification":
             plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
         elif mode == "localization":
