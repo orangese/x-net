@@ -166,13 +166,13 @@ def plot(results, mode, save_path=None, with_citations=False, font=None):
     # annotate outliers
     for model in results:
         if "X-Net" in model:
-            plt.annotate(model, (results[model][0] + 0.1, results[model][1] + 0.25), weight="bold", fontsize=13)
+            plt.annotate(model, (results[model][0] + 0.1, results[model][1] + 0.25), weight="bold", fontsize=18)
         elif "TSA" in model:
             if with_citations:
-                plt.annotate("TSA Officer", (results[model][0] - 1.75, results[model][1] + 2.7), weight="bold", fontsize=13)
+                plt.annotate("TSA Officer", (results[model][0] - 1.75, results[model][1] + 2.7), weight="bold", fontsize=18)
                 plt.annotate(model.replace("TSA", " "), (results[model][0], results[model][1] + 2.9))
             else:
-                plt.annotate("TSA Officer", (results[model][0] - 0.875, results[model][1] + 2.7), weight="bold", fontsize=13)
+                plt.annotate("TSA Officer", (results[model][0] - 0.875, results[model][1] + 2.7), weight="bold", fontsize=18)
 
     # annotate other points
     vertical_endpts, horizontal_endpts = draw_brackets()
@@ -181,23 +181,26 @@ def plot(results, mode, save_path=None, with_citations=False, font=None):
         if not with_citations and " " in model:
             model = model[:model.find("[") - 1]
         if mode == "classification":
-            plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 4) + 1), fontsize=10)
+            plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[0][1] - (idx * 6) + 1), fontsize=13)
         elif mode == "localization":
-            plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[1][1] - (idx * 4)), fontsize=10)
+            plt.annotate(model, (vertical_endpts[0][0] + 0.1, vertical_endpts[1][1] - (idx * 6)), fontsize=13)
         else:
             raise ValueError("supported modes are 'classification' and 'localization'")
 
     # set up grid and plot
     plt.grid(which="major", linestyle=":")
 
-    apa_citation = "$\it{Figure}$ " + ("1" if mode == "classification" else "2")
+    apa_citation = "$\it{Figure}$ " + ("5" if mode == "classification" else "6")
 
-    plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()))
-    plt.xlabel("Time to analyze an X-ray baggage scan (sec)")
-    plt.ylabel("{} mAP (%)".format(mode.title()))
+    plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()), fontsize=15)
+    plt.xlabel("Time to analyze an X-ray baggage scan (sec)", fontsize=13)
+    plt.ylabel("{} mAP (%)".format(mode.title()), fontsize=13)
+
+    title = plt.gca().title
+    title.set_position([.5, 1.03])
 
     x1, x2, y1, y2 = plt.axis()
-    plt.axis((x1, x2 + 2, y1, 100))
+    plt.axis((x1, x2 + 1., y1, 100))
 
     fig = plt.gcf()
     x, y = fig.get_size_inches()
@@ -214,5 +217,5 @@ if __name__ == "__main__":
     classification_results = parse_model_results("../results/text/classification_results.json")
     localization_results = parse_model_results("../results/text/localization_results.json")
 
-    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg", font="Product Sans")
-    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg", font="Product Sans")
+    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg", font="Open Sans")
+    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg", font="Open Sans")
