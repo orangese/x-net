@@ -400,11 +400,14 @@ if __name__ == "__main__":
 
     anns = retrieve_annotations(annotated_imgs + "annotations.csv")
 
-    ct = 0
+    ct = {CLASS: 0 for CLASS in CLASSES}
     for file in anns:
         for obj in anns[file]:
-             ct += len(obj)
-    print("Total obj ct: {}".format(ct))
+             ct[CLASSES[int(obj)]] += len(anns[file][obj])
+
+    print("Total threat count:")
+    for obj in ct:
+        print("-> {}: {}".format(obj, ct[obj]))
 
     false_positive = ['P03585.jpg', 'P08758.jpg', 'P04435.jpg', 'P08701.jpg', 'P08833.jpg', 'P08902.jpg', 'P08888.jpg', 'P00673.jpg', 'P07425.jpg', 'P03862.jpg', 'P04107.jpg', 'P08008.jpg', 'P08893.jpg', 'P08025.jpg', 'P02574.jpg', 'P05605.jpg', 'P05528.jpg', 'P05325.jpg', 'P06240.jpg', 'P08466.jpg', 'P07701.jpg', 'P05286.jpg', 'P06239.jpg', 'P08882.jpg', 'P08670.jpg', 'P04504.jpg', 'P08884.jpg', 'P06838.jpg', 'P05493.jpg', 'P08758.jpg', 'P07586.jpg', 'P06409.jpg', 'P08135.jpg', 'P08851.jpg', 'P07687.jpg', 'P07855.jpg', 'P04774.jpg', 'P08857.jpg', 'P08132.jpg', 'P07585.jpg', 'P04578.jpg', 'P07526.jpg', 'P00763.jpg', 'P07219.jpg', 'P04039.jpg', 'P07217.jpg', 'P01920.jpg', 'P06141.jpg', 'P07673.jpg', 'P08788.jpg', 'P06240.jpg', 'P08296.jpg', 'P03470.jpg', 'P08219.jpg', 'P08857.jpg', 'P04361.jpg', 'P08908.jpg', 'P08559.jpg', 'P06156.jpg', 'P00276.jpg', 'P06725.jpg', 'P07218.jpg']
 

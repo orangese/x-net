@@ -190,9 +190,12 @@ def plot(results, mode, save_path=None, with_citations=False, font=None):
     # set up grid and plot
     plt.grid(which="major", linestyle=":")
 
-    apa_citation = "$\it{Figure}$ " + ("4" if mode == "classification" else "5")
+    if not with_citations:
+        apa_citation = "$\it{Figure}$ " + ("4" if mode == "classification" else "5")
+        plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()), fontsize=13)
+    else:
+        plt.title("{} mAP vs. Baggage Analysis Time".format(mode.title(), fontsize=13))
 
-    plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()), fontsize=13)
     plt.xlabel("Time to analyze an X-ray baggage scan (sec)", fontsize=13)
     plt.ylabel("{} mAP (%)".format(mode.title()), fontsize=13)
 
