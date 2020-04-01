@@ -128,7 +128,7 @@ def plot(results, mode, save_path=None, with_citations=False, font=None):
         adj = results.copy()
 
         adj.pop("X-Net")
-        adj.pop("TSA [5], [12], [16], [21]")
+        adj.pop("TSA [6], [12], [16], [21]")
 
         return adj
 
@@ -169,8 +169,8 @@ def plot(results, mode, save_path=None, with_citations=False, font=None):
             plt.annotate(model, (results[model][0] + 0.1, results[model][1] + 0.25), weight="bold", fontsize=18)
         elif "TSA" in model:
             if with_citations:
-                plt.annotate("TSA Officer", (results[model][0] - 1.75, results[model][1] + 2.7), weight="bold", fontsize=18)
-                plt.annotate(model.replace("TSA", " "), (results[model][0], results[model][1] + 2.9))
+                plt.annotate("TSA Officer", (results[model][0] - 2.25, results[model][1] + 2.7), weight="bold", fontsize=18)
+                plt.annotate(model.replace("TSA", " "), (results[model][0] - 0.4, results[model][1] + 3.7))
             else:
                 plt.annotate("TSA Officer", (results[model][0] - 0.875, results[model][1] + 2.7), weight="bold", fontsize=18)
 
@@ -190,13 +190,14 @@ def plot(results, mode, save_path=None, with_citations=False, font=None):
     # set up grid and plot
     plt.grid(which="major", linestyle=":")
 
-    apa_citation = "$\it{Figure}$ " + ("1" if mode == "classification" else "2")
+    apa_citation = "$\it{Figure}$ " + ("4" if mode == "classification" else "5")
 
     plt.title("{}. {} mAP vs. Baggage Analysis Time".format(apa_citation, mode.title()), fontsize=13)
     plt.xlabel("Time to analyze an X-ray baggage scan (sec)", fontsize=13)
     plt.ylabel("{} mAP (%)".format(mode.title()), fontsize=13)
 
-    plt.gca().title.set_position([.35, -0.3])#1.03])
+    if not with_citations:
+        plt.gca().title.set_position([.35, -0.3])#1.03])
 
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2 + 1., y1, 100))
@@ -216,5 +217,5 @@ if __name__ == "__main__":
     classification_results = parse_model_results("../results/text/classification_results.json")
     localization_results = parse_model_results("../results/text/localization_results.json")
 
-    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg", font="Open Sans")
-    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg", font="Open Sans")
+    plot(classification_results, mode="classification", save_path="../results/plots/classification_map.jpg", font="Open Sans", with_citations=True)
+    plot(localization_results, mode="localization", save_path="../results/plots/localization_map.jpg", font="Open Sans", with_citations=True)
