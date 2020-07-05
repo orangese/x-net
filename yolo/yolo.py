@@ -157,8 +157,9 @@ class YOLO:
 
         # freeze layers
         if freeze is None:
-            freeze = self.freeze(self.yolo, mode="full train")
-        freeze(self.yolo, *args, **kwargs)
+            self.freeze(self.yolo, mode="full train")
+        else:
+            freeze(self.yolo, *args, **kwargs)
 
         frozen, trainable = 0, 0
         for layer in self.yolo.layers:
